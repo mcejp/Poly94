@@ -6,8 +6,10 @@ read_verilog \
     rtl/RGB_Color_Bars_Generator.v \
     rtl/Text_Generator.v \
     rtl/tmds_encoder.v \
-    rtl/vga2dvid.v
+    rtl/vga2dvid.v \
+    rtl/ip/picorv32.v
 read_verilog -sv \
+    rtl/CPU_Rom.sv \
     rtl/top.sv \
     rtl/VGA_Timing_Generator.sv
 hierarchy -top top

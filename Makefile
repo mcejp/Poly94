@@ -1,6 +1,6 @@
 .PHONY: all
 .DELETE_ON_ERROR:
-TOPMOD  := blinky
+TOPMOD  := top
 VLOGFIL := $(TOPMOD).v
 BINFILE := $(TOPMOD).bin
 VDIRFB  := ./obj_dir
@@ -65,13 +65,14 @@ endif
 ulx3s.bit: ulx3s_out.config
 	ecppack ulx3s_out.config ulx3s.bit
 
-ulx3s_out.config: poly94.json
+ulx3s_out.config: poly94.json ulx3s_v20.lpf
 	nextpnr-ecp5 --85k --json poly94.json \
 		--lpf ulx3s_v20.lpf \
 		--textcfg ulx3s_out.config 
 
 poly94.json: poly94.ys \
 		rtl/clk_25_250_125_25.v \
+		rtl/CPU_Rom.sv \
 		rtl/fake_differential.v \
 		rtl/hdmi_video.v \
 		rtl/pll.v \
@@ -80,7 +81,9 @@ poly94.json: poly94.ys \
 		rtl/tmds_encoder.v \
 		rtl/top.sv \
 		rtl/VGA_Timing_Generator.sv \
-		rtl/vga2dvid.v
+		rtl/vga2dvid.v \
+		rtl/ip/picorv32.v \
+		boot/boot.vh
 	yosys -m ghdl poly94.ys 
 
 prog: ulx3s.bit
