@@ -70,7 +70,7 @@ ulx3s_out.config: poly94.json
 		--lpf ulx3s_v20.lpf \
 		--textcfg ulx3s_out.config 
 
-poly94.json: poly94.ys rtl/vga.vhd rtl/vga2dvid.vhd rtl/tmds_encoder.vhd rtl/top_vgatest.vhd rtl/ecp5pll.vhd
+poly94.json: poly94.ys rtl/clk_25_250_125_25.v rtl/fake_differential.v rtl/hdmi_video.v rtl/pll.v rtl/tmds_encoder.v rtl/top.v rtl/vga_video.v rtl/vga2dvid.v
 	yosys -m ghdl poly94.ys 
 
 prog: ulx3s.bit
