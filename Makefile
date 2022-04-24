@@ -43,8 +43,8 @@ $(VCDFILE): $(SIMPROG)
 ## 
 .PHONY: clean
 clean:
-	rm -rf $(VDIRFB)/ $(SIMPROG) $(VCDFILE) blinky/ $(BINFILE) $(RPTFILE)
-	rm -rf blinky.json ulx3s_out.config ulx3s.bit
+	rm -rf $(VDIRFB)/ $(SIMPROG) $(VCDFILE) poly94/ $(BINFILE) $(RPTFILE)
+	rm -rf poly94.json ulx3s_out.config ulx3s.bit
 
 ##
 ## Find all of the Verilog dependencies and submodules
@@ -65,13 +65,13 @@ endif
 ulx3s.bit: ulx3s_out.config
 	ecppack ulx3s_out.config ulx3s.bit
 
-ulx3s_out.config: blinky.json
-	nextpnr-ecp5 --85k --json blinky.json \
+ulx3s_out.config: poly94.json
+	nextpnr-ecp5 --85k --json poly94.json \
 		--lpf ulx3s_v20.lpf \
 		--textcfg ulx3s_out.config 
 
-blinky.json: blinky.ys blinky.v
-	yosys blinky.ys 
+poly94.json: poly94.ys rtl/vga.vhd rtl/vga2dvid.vhd rtl/tmds_encoder.vhd rtl/top_vgatest.vhd rtl/ecp5pll.vhd
+	yosys -m ghdl poly94.ys 
 
 prog: ulx3s.bit
 	fujprog ulx3s.bit
