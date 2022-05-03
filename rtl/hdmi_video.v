@@ -1,12 +1,13 @@
+`default_nettype none
+
 module hdmi_video(
   input clk_25mhz,
-  output [9:0] x,
-  output [9:0] y,
-  input [23:0] color,
+  input hsync_n_i,
+  input vsync_n_i,
+  input blank_n_i,
+  input [23:0] color_i,
   output [3:0] gpdi_dp,// gpdi_dn,
-  output vga_vsync,
-  output vga_hsync,
-  output vga_blank,
+
   output clk_locked
 );
     // clock generator
@@ -21,27 +22,16 @@ module hdmi_video(
       .locked(clk_locked)
     );
    
-    vga_video vga_instance
-    (
-      .clk(clk_25MHz),
-      .resetn(clk_locked),
-      .vga_hsync(vga_hsync),
-      .vga_vsync(vga_vsync),
-      .vga_blank(vga_blank),
-      .h_pos(x),
-      .v_pos(y)
-    );
-
     // VGA to digital video converter
     wire [1:0] tmds[3:0];
     vga2dvid vga2dvid_instance
     (
       .clk_pixel(clk_25MHz),
       .clk_shift(clk_125MHz),
-      .in_color(color),
-      .in_hsync(vga_hsync),
-      .in_vsync(vga_vsync),
-      .in_blank(vga_blank),
+      .in_color(color_i),
+      .in_hsync(hsync_n_i),
+      .in_vsync(vsync_n_i),
+      .in_blank(~blank_n_i),
       .out_clock(tmds[3]),
       .out_red(tmds[2]),
       .out_green(tmds[1]),

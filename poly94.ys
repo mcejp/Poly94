@@ -1,3 +1,12 @@
-read_verilog rtl/clk_25_250_125_25.v rtl/fake_differential.v rtl/hdmi_video.v rtl/pll.v rtl/tmds_encoder.v rtl/top.v rtl/vga_video.v rtl/vga2dvid.v
+read_verilog \
+    rtl/clk_25_250_125_25.v \
+    rtl/fake_differential.v \
+    rtl/hdmi_video.v \
+    rtl/pll.v \
+    rtl/RGB_Color_Bars_Generator.v \
+    rtl/tmds_encoder.v \
+    rtl/top.v \
+    rtl/VGA_Timing_Generator.v \
+    rtl/vga2dvid.v
 hierarchy -top top
 synth_ecp5 -noccu2 -nomux -nodram -json poly94.json
