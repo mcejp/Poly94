@@ -8,41 +8,79 @@ module top
 );
     // assign wifi_gpio0 = 1'b1;
 
-    wire hsync_n, vsync_n, blank_n;
-    wire end_of_line;
+    // TODO: can we use some SystemVerilog structure for this?
+    wire hsync_n0, vsync_n0, blank_n0, end_of_line0, end_of_frame0;
+    wire hsync_n1, vsync_n1, blank_n1, end_of_line1, end_of_frame1;
+    wire hsync_n2, vsync_n2, blank_n2, end_of_line2, end_of_frame2;
 
-    wire [23:0] color;
+    wire [23:0] color1, color2;
 
     VGA_Timing_Generator vgatm(
         .clk_i(clk_25mhz),
         .rst_i(1'b0),       // no HW POR on ulx3s?
 
-        .end_of_line_o(end_of_line),
-        // .end_of_frame_o,
+        .end_of_line_o(end_of_line0),
+        .end_of_frame_o(end_of_frame0),
 
-        .hsync_n_o(hsync_n),
-        .vsync_n_o(vsync_n),
-        .blank_n_o(blank_n)
+        .hsync_n_o(hsync_n0),
+        .vsync_n_o(vsync_n0),
+        .blank_n_o(blank_n0)
     );
 
     RGB_Color_Bars_Generator tpg(
-       .clk_i(clk_25mhz),
+        .clk_i(clk_25mhz),
     
-       .visible_i(blank_n),
-       .end_of_line_i(end_of_line),
-    
-       .rgb_o(color),
+        .visible_i(blank_n0),
+        .end_of_frame_i(end_of_frame0),
+        .end_of_line_i(end_of_line0),
+        .hsync_n_i(hsync_n0),
+        .vsync_n_i(vsync_n0),
+
+        .end_of_frame_o(end_of_frame1),
+        .end_of_line_o(end_of_line1),
+        .hsync_n_o(hsync_n1),
+        .vsync_n_o(vsync_n1),
+        .visible_o(blank_n1),
+        .rgb_o(color1),
+    );
+
+    Text_Generator tg(
+        .clk_i(clk_25mhz),
+        .rst_i(1'b0),
+
+        .end_of_frame_i(end_of_frame1),
+        .end_of_line_i(end_of_line1),
+        .hsync_n_i(hsync_n1),
+        .vsync_n_i(vsync_n1),
+        .visible_i(blank_n1),
+
+        .bg_rgb_i(color1),
+        .fg_rgb_i(~color1),//24'hffffff),
+
+        .visible_o(blank_n2),
+        .end_of_frame_o(end_of_frame2),
+        .end_of_line_o(end_of_line2),
+        .hsync_n_o(hsync_n2),
+        .vsync_n_o(vsync_n2),
+
+        .rgb_o(color2),
+
+        // Memory interface
+        // addr_o,         // address in 16-bit words
+        // rd_strobe_o,    // read strobe: we expect the data exactly 3 cycles after signalling this
+
+        .data_i(8'd32)
     );
 
     hdmi_video hdmi_video
     (
         .clk_25mhz(clk_25mhz),
 
-        .hsync_n_i(hsync_n),
-        .vsync_n_i(vsync_n),
-        .blank_n_i(blank_n),
+        .hsync_n_i(hsync_n2),
+        .vsync_n_i(vsync_n2),
+        .blank_n_i(blank_n2),
 
-        .color_i(color),
+        .color_i(color2),
 
         .gpdi_dp(gpdi_dp)
         //.gpdi_dn(gpdi_dn)
@@ -50,8 +88,8 @@ module top
         //.clk_locked(led[2])
     );
 
-    assign led[0] = ~vsync_n;
-    assign led[1] = ~led[0];
+    assign led[0] = 1'b0;
+    assign led[1] = 1'b0;
     assign led[2] = 1'b0;
     assign led[3] = 1'b0;
     assign led[4] = 1'b0;
