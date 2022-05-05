@@ -1,4 +1,5 @@
 `default_nettype none
+`include "VGA_Timing.sv"
 
 module top
 (
@@ -9,7 +10,7 @@ module top
     // assign wifi_gpio0 = 1'b1;
 
     // TODO: can we use some SystemVerilog structure for this?
-    wire hsync_n0, vsync_n0, blank_n0, end_of_line0, end_of_frame0;
+    wire VGA_Timing timing0;
     wire hsync_n1, vsync_n1, blank_n1, end_of_line1, end_of_frame1;
     wire hsync_n2, vsync_n2, blank_n2, end_of_line2, end_of_frame2;
 
@@ -19,22 +20,17 @@ module top
         .clk_i(clk_25mhz),
         .rst_i(1'b0),       // no HW POR on ulx3s?
 
-        .end_of_line_o(end_of_line0),
-        .end_of_frame_o(end_of_frame0),
-
-        .hsync_n_o(hsync_n0),
-        .vsync_n_o(vsync_n0),
-        .blank_n_o(blank_n0)
+        .timing_o(timing0)
     );
 
     RGB_Color_Bars_Generator tpg(
         .clk_i(clk_25mhz),
     
-        .visible_i(blank_n0),
-        .end_of_frame_i(end_of_frame0),
-        .end_of_line_i(end_of_line0),
-        .hsync_n_i(hsync_n0),
-        .vsync_n_i(vsync_n0),
+        .visible_i(timing0.blank_n),
+        .end_of_frame_i(timing0.end_of_frame),
+        .end_of_line_i(timing0.end_of_line),
+        .hsync_n_i(timing0.hsync_n),
+        .vsync_n_i(timing0.vsync_n),
 
         .end_of_frame_o(end_of_frame1),
         .end_of_line_o(end_of_line1),

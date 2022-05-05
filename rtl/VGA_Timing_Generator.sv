@@ -10,27 +10,19 @@
 // - Generate End-of-Frame output
 
 `default_nettype none
+`include "VGA_Timing.sv"
 
 module VGA_Timing_Generator(
     clk_i,
     rst_i,
 
-    hsync_n_o,
-    vsync_n_o,
-    blank_n_o,          // 1 if pixel visible, 0 if "blanked"
-
-    end_of_line_o,      // strobed just after a line has been fully scanned out
-    end_of_frame_o      // strobed just after a frame has been fully scanned out, simultaneously with end_of_line_o
+    timing_o
 );
 
 input clk_i;
 input rst_i;
 
-output reg end_of_line_o;
-output reg end_of_frame_o;
-output reg hsync_n_o;
-output reg vsync_n_o;
-output reg blank_n_o;
+output VGA_Timing timing_o;
 
 // Timing constants
 
@@ -104,27 +96,27 @@ localparam V_SYNC_END =     V_TOTAL - V_BACK_PORCH;
 
 always @ (posedge clk_i) begin
     if (rst_i) begin
-        hsync_n_o <= 1'b1;
-        vsync_n_o <= 1'b1;
+        timing_o.hsync_n <= 1'b1;
+        timing_o.vsync_n <= 1'b1;
     end else begin
         // TODO: explore the most efficient way to implement these
 
         if (next_i == H_SYNC_BEGIN) begin
-            hsync_n_o <= 1'b0;
+            timing_o.hsync_n <= 1'b0;
         end else if (next_i == H_SYNC_END) begin
-            hsync_n_o <= 1'b1;
+            timing_o.hsync_n <= 1'b1;
         end
 
         if (next_i == 0 && next_scanline == V_SYNC_BEGIN) begin
-            vsync_n_o <= 1'b0;
+            timing_o.vsync_n <= 1'b0;
         end else if (next_i == 0 && next_scanline == V_SYNC_END) begin
-            vsync_n_o <= 1'b1;
+            timing_o.vsync_n <= 1'b1;
         end
 
         if (next_i < H_VISIBLE && next_scanline < V_VISIBLE) begin
-            blank_n_o <= 1'b1;
+            timing_o.blank_n <= 1'b1;
         end else begin
-            blank_n_o <= 1'b0;
+            timing_o.blank_n <= 1'b0;
         end
     end
 end
@@ -133,9 +125,9 @@ end
 
 always @ (posedge clk_i) begin
     if (is_picture_line && next_i == H_VISIBLE) begin
-        end_of_line_o <= 1'b1;
+        timing_o.end_of_line <= 1'b1;
     end else begin
-        end_of_line_o <= 1'b0;
+        timing_o.end_of_line <= 1'b0;
     end
 end
 
@@ -144,9 +136,9 @@ end
 always @ (posedge clk_i) begin
     // just after the last pixel of last visible scanline
     if (is_picture_line && next_i == H_VISIBLE && next_scanline == V_VISIBLE - 1) begin
-        end_of_frame_o <= 1'b1;
+        timing_o.end_of_frame <= 1'b1;
     end else begin
-        end_of_frame_o <= 1'b0;
+        timing_o.end_of_frame <= 1'b0;
     end
 end
 

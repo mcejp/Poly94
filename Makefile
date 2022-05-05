@@ -78,8 +78,8 @@ poly94.json: poly94.ys \
 		rtl/RGB_Color_Bars_Generator.v \
 		rtl/Text_Generator.v \
 		rtl/tmds_encoder.v \
-		rtl/top.v \
-		rtl/VGA_Timing_Generator.v \
+		rtl/top.sv \
+		rtl/VGA_Timing_Generator.sv \
 		rtl/vga2dvid.v
 	yosys -m ghdl poly94.ys 
 
