@@ -82,6 +82,7 @@ poly94.json: poly94.ys \
 		rtl/top.sv \
 		rtl/VGA_Timing_Generator.sv \
 		rtl/vga2dvid.v \
+		rtl/ecp5/ecp5pll.sv \
 		rtl/ip/picorv32.v \
 		rtl/ip/uart.sv \
 		boot/boot.vh

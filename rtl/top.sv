@@ -11,7 +11,24 @@ module top
 );
     // assign wifi_gpio0 = 1'b1;
 
-    wire clk_sys = clk_25mhz;
+    // begin PLL
+    wire locked;
+    wire [3:0] clocks;
+    ecp5pll
+    #(
+        .in_hz(  25_000_000),
+        .out0_hz(25_000_000),
+        .out1_hz(25_000_000), .out1_deg(90) // phase shifted for SDRAM chip
+    )
+    ecp5pll_inst
+    (
+        .clk_i(clk_25mhz),
+        .clk_o(clocks),
+        .locked(locked)
+    );
+
+    wire clk_sys     = clocks[0];
+    // end PLL
 
     // TODO: can we use some SystemVerilog structure for this?
     wire VGA_Timing timing0;
