@@ -5,7 +5,9 @@ module top
 (
     input clk_25mhz,
     output [3:0] gpdi_dp,//, gpdi_dn,
-    output [7:0] led
+    output [7:0] led,
+
+    output ftdi_rxd
 );
     // assign wifi_gpio0 = 1'b1;
 
@@ -94,6 +96,12 @@ module top
     wire[31:0] cpu_mem_wdata;
     wire[ 3:0] cpu_mem_wstrb;
     wire[31:0] cpu_mem_rdata;
+    reg[31:0] cpu_io_rdata;
+    enum { SEL_MEM, SEL_IO } cpu_mem_rselect;
+
+    reg uart_wr_strobe;
+    reg[7:0] uart_data;
+    wire uart_busy;
 
     reg reset_n = 1'b0;
     logic[7:0] reset_cnt = 0;
@@ -145,7 +153,7 @@ module top
         .mem_addr(cpu_mem_addr),
         .mem_wdata(cpu_mem_wdata),
         .mem_wstrb(cpu_mem_wstrb),
-        .mem_rdata(cpu_mem_rdata)
+        .mem_rdata(cpu_mem_rselect == SEL_MEM ? cpu_mem_rdata : cpu_io_rdata)
 
         // Look-Ahead Interface
         // output            mem_la_read,
@@ -180,11 +188,27 @@ module top
         .q_o(cpu_mem_rdata)
     );
 
+    uart #(
+        .CLK_FREQ_HZ(25_000_000),
+        .BAUDRATE(115_200)
+    ) the_uart (
+        .clk_i(clk_25mhz),
+        .rst_i(~reset_n),
+
+        .uart_wr_strobe_i(uart_wr_strobe),
+        .uart_data_i(uart_data),
+
+        .uart_busy_o(uart_busy),
+        .uart_tx_o(ftdi_rxd)
+    );
+
     // reg[7:0] col_data;
 
     always @ (posedge clk_25mhz) begin
         if (!reset_n)
             bg_col <= 0;
+
+        uart_wr_strobe <= 0;
 
         if (cpu_mem_valid) begin
             // $display("MEM VALID %08X", cpu_mem_addr);
@@ -194,6 +218,9 @@ module top
         end
         if (cpu_mem_valid && !cpu_mem_ready && cpu_mem_wstrb != 0 && cpu_mem_addr == 32'h00001000) begin
             $display("WRITE CHAR '%c'", cpu_mem_wdata);
+
+            uart_wr_strobe <= 1;
+            uart_data <= cpu_mem_wdata;
         end
 
         if (cpu_mem_valid && !cpu_mem_ready && cpu_mem_wstrb != 0 && cpu_mem_addr == 32'h00001004) begin
@@ -203,6 +230,14 @@ module top
                 //col_data <= cpu_mem_wdata[7:0] | cpu_mem_wdata[15:8] | cpu_mem_wdata[23:16] | cpu_mem_wdata[31:24];
             end
         end
+
+        if (cpu_mem_addr[12] == 1) begin
+            cpu_mem_rselect <= SEL_IO;
+        end else begin
+            cpu_mem_rselect <= SEL_MEM;
+        end
+
+        cpu_io_rdata = {31'h00000000, uart_busy};
 
         // if (cpu_mem_valid && !cpu_mem_ready && cpu_mem_wstrb != 0)
         //     col_data <= cpu_mem_addr[7:0];

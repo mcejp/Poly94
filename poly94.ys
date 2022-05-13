@@ -11,6 +11,7 @@ read_verilog \
 read_verilog -sv \
     rtl/CPU_Rom.sv \
     rtl/top.sv \
-    rtl/VGA_Timing_Generator.sv
+    rtl/VGA_Timing_Generator.sv \
+    rtl/ip/uart.sv
 hierarchy -top top
 synth_ecp5 -noccu2 -nomux -nodram -json poly94.json

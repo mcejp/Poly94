@@ -83,6 +83,7 @@ poly94.json: poly94.ys \
 		rtl/VGA_Timing_Generator.sv \
 		rtl/vga2dvid.v \
 		rtl/ip/picorv32.v \
+		rtl/ip/uart.sv \
 		boot/boot.vh
 	yosys -m ghdl poly94.ys 
 
