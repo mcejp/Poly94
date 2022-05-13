@@ -97,9 +97,9 @@ module top
     wire[31:0] cpu_mem_addr;
     wire[31:0] cpu_mem_wdata;
     wire[ 3:0] cpu_mem_wstrb;
-    wire[31:0] cpu_mem_rdata;
+    wire[31:0] bootrom_data;
     reg[31:0] cpu_io_rdata;
-    enum { SEL_MEM, SEL_IO } cpu_mem_rselect;
+    enum { MEM_BOOTROM, MEM_IO } cpu_mem_select;
 
     reg uart_wr_strobe;
     reg[7:0] uart_data;
@@ -155,7 +155,7 @@ module top
         .mem_addr(cpu_mem_addr),
         .mem_wdata(cpu_mem_wdata),
         .mem_wstrb(cpu_mem_wstrb),
-        .mem_rdata(cpu_mem_rselect == SEL_MEM ? cpu_mem_rdata : cpu_io_rdata)
+        .mem_rdata(cpu_mem_select == MEM_BOOTROM ? bootrom_data : cpu_io_rdata)
 
         // Look-Ahead Interface
         // output            mem_la_read,
@@ -183,17 +183,17 @@ module top
         // output reg [35:0] trace_data
     );
 
-    CPU_Rom cpurom(
+    CPU_Rom bootrom(
         .clk_i(clk_sys),
         .addr_i(cpu_mem_addr[31:2]),
 
-        .q_o(cpu_mem_rdata)
+        .q_o(bootrom_data)
     );
 
     uart #(
         .CLK_FREQ_HZ(25_000_000),
         .BAUDRATE(115_200)
-    ) the_uart (
+    ) uart_inst(
         .clk_i(clk_sys),
         .rst_i(~reset_n),
 
@@ -206,53 +206,97 @@ module top
 
     // reg[7:0] col_data;
 
+    // Memory control
+
+    parameter IO_SPACE_START = 32'h0000_1000;
+
+    enum { STATE_IDLE, STATE_FINISHED } mem_state;
+
+    wire is_io_addr = (cpu_mem_addr[31:12] == IO_SPACE_START[31:12]);       // TODO: can be relaxed
+    wire is_valid_io_write = (mem_state == STATE_IDLE && cpu_mem_valid && is_io_addr && cpu_mem_wstrb != 0);
+
     always @ (posedge clk_sys) begin
-        if (!reset_n)
-            bg_col <= 0;
+        cpu_mem_ready <= 1'b0;
 
-        uart_wr_strobe <= 0;
+        if (!reset_n) begin
+            cpu_mem_select <= MEM_BOOTROM;
+        end else begin
+            if (cpu_mem_valid) begin
+                // $display("MEM VALID %08X", cpu_mem_addr);
+            end
 
-        if (cpu_mem_valid) begin
-            // $display("MEM VALID %08X", cpu_mem_addr);
+            case (mem_state)
+            STATE_IDLE: begin
+                // Request to start memory operation?
+
+                if (cpu_mem_valid) begin
+                    if (is_io_addr) begin
+                        // IO read/write is processed simultaneously, we can go directly to FINISHED
+                        // (CPU just needs 1 clock to de-assert valid_o)
+
+                        cpu_mem_ready <= 1'b1;
+                        cpu_mem_select <= MEM_IO;
+                        mem_state <= STATE_FINISHED;
+                    end else begin
+                        // ROM read (or a futile attempt to write)
+                        // ROM read finishes simultaneously and so will the setting of the RDATA mux
+
+                        cpu_mem_ready <= 1'b1;
+                        cpu_mem_select <= MEM_BOOTROM;
+                        mem_state <= STATE_FINISHED;
+                    end
+                end
+            end
+
+            STATE_FINISHED: begin
+                mem_state <= STATE_IDLE;
+            end
+            endcase
         end
+    end
+
+    // System control
+
+    always @ (posedge clk_sys) begin
+        uart_wr_strobe <= 1'b0;
+
+        if (!reset_n) begin
+            bg_col <= 0;
+        end else begin
+            // write TRACE_REG
+            if (is_valid_io_write && cpu_mem_addr[11:0] == 12'h000) begin
+                $display("WRITE CHAR '%c'", cpu_mem_wdata);
+
+                uart_wr_strobe <= 1;
+                uart_data <= cpu_mem_wdata;
+            end
+
+            // write BG_COLOR
+            if (is_valid_io_write && cpu_mem_addr[11:0] == 12'h004) begin
+                $display("WRITE BG_COL %08X", cpu_mem_wdata);
+                if (cpu_mem_wdata != 0) begin
+                    bg_col <= cpu_mem_wdata;
+                    //col_data <= cpu_mem_wdata[7:0] | cpu_mem_wdata[15:8] | cpu_mem_wdata[23:16] | cpu_mem_wdata[31:24];
+                end
+            end
+
+            //
+            cpu_io_rdata = {31'h00000000, uart_busy};
+        end
+    end
+
+    // misc old shit
+
+    always @ (posedge clk_sys) begin
         if (cpu_mem_valid && cpu_mem_wstrb != 0) begin
             // $display("WRITE %08X <= %08X", cpu_mem_addr, cpu_mem_wdata);
         end
-        if (cpu_mem_valid && !cpu_mem_ready && cpu_mem_wstrb != 0 && cpu_mem_addr == 32'h00001000) begin
-            $display("WRITE CHAR '%c'", cpu_mem_wdata);
-
-            uart_wr_strobe <= 1;
-            uart_data <= cpu_mem_wdata;
-        end
-
-        if (cpu_mem_valid && !cpu_mem_ready && cpu_mem_wstrb != 0 && cpu_mem_addr == 32'h00001004) begin
-            $display("WRITE BG_COL %08X", cpu_mem_wdata);
-            if (cpu_mem_wdata != 0) begin
-                bg_col <= cpu_mem_wdata;
-                //col_data <= cpu_mem_wdata[7:0] | cpu_mem_wdata[15:8] | cpu_mem_wdata[23:16] | cpu_mem_wdata[31:24];
-            end
-        end
-
-        if (cpu_mem_addr[12] == 1) begin
-            cpu_mem_rselect <= SEL_IO;
-        end else begin
-            cpu_mem_rselect <= SEL_MEM;
-        end
-
-        cpu_io_rdata = {31'h00000000, uart_busy};
 
         // if (cpu_mem_valid && !cpu_mem_ready && cpu_mem_wstrb != 0)
         //     col_data <= cpu_mem_addr[7:0];
 
         if (cpu_mem_valid && cpu_mem_ready) begin
             // $display("READ %08X => %08X", cpu_mem_addr, cpu_mem_rdata);
-        end
-
-        if (cpu_mem_valid && !cpu_mem_ready) begin
-            cpu_mem_ready <= 1'b1;
-            // $display("SIGNAL READY %08X", cpu_mem_addr);
-        end else begin
-            cpu_mem_ready <= 1'b0;
         end
     end
 
