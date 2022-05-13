@@ -11,6 +11,8 @@ module top
 );
     // assign wifi_gpio0 = 1'b1;
 
+    wire clk_sys = clk_25mhz;
+
     // TODO: can we use some SystemVerilog structure for this?
     wire VGA_Timing timing0;
     wire hsync_n1, vsync_n1, blank_n1, end_of_line1, end_of_frame1;
@@ -20,14 +22,14 @@ module top
     reg[23:0] bg_col;
 
     VGA_Timing_Generator vgatm(
-        .clk_i(clk_25mhz),
+        .clk_i(clk_sys),
         .rst_i(1'b0),       // no HW POR on ulx3s?
 
         .timing_o(timing0)
     );
 
     RGB_Color_Bars_Generator tpg(
-        .clk_i(clk_25mhz),
+        .clk_i(clk_sys),
     
         .visible_i(timing0.blank_n),
         .end_of_frame_i(timing0.end_of_frame),
@@ -44,7 +46,7 @@ module top
     );
 
     Text_Generator tg(
-        .clk_i(clk_25mhz),
+        .clk_i(clk_sys),
         .rst_i(1'b0),
 
         .end_of_frame_i(end_of_frame1),
@@ -74,7 +76,7 @@ module top
 `ifndef VERILATOR
     hdmi_video hdmi_video
     (
-        .clk_25mhz(clk_25mhz),
+        .clk_25mhz(clk_sys),
 
         .hsync_n_i(hsync_n2),
         .vsync_n_i(vsync_n2),
@@ -106,7 +108,7 @@ module top
     reg reset_n = 1'b0;
     logic[7:0] reset_cnt = 0;
 
-    always @ (posedge clk_25mhz) begin
+    always @ (posedge clk_sys) begin
         if (reset_cnt < 10) begin
             reset_cnt <= reset_cnt + 1;
         end else begin
@@ -143,7 +145,7 @@ module top
         // parameter [31:0] STACKADDR = 32'h ffff_ffff
     //)
     (
-        .clk(clk_25mhz),
+        .clk(clk_sys),
         .resetn(reset_n),      // needed!
 
         .mem_valid(cpu_mem_valid),
@@ -182,7 +184,7 @@ module top
     );
 
     CPU_Rom cpurom(
-        .clk_i(clk_25mhz),
+        .clk_i(clk_sys),
         .addr_i(cpu_mem_addr[31:2]),
 
         .q_o(cpu_mem_rdata)
@@ -192,7 +194,7 @@ module top
         .CLK_FREQ_HZ(25_000_000),
         .BAUDRATE(115_200)
     ) the_uart (
-        .clk_i(clk_25mhz),
+        .clk_i(clk_sys),
         .rst_i(~reset_n),
 
         .uart_wr_strobe_i(uart_wr_strobe),
@@ -204,7 +206,7 @@ module top
 
     // reg[7:0] col_data;
 
-    always @ (posedge clk_25mhz) begin
+    always @ (posedge clk_sys) begin
         if (!reset_n)
             bg_col <= 0;
 
