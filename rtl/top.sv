@@ -7,11 +7,27 @@ module top
     output [3:0] gpdi_dp,//, gpdi_dn,
     output [7:0] led,
 
+    // SDRAM interface (For use with 16Mx16bit or 32Mx16bit SDR DRAM, depending on version)
+    output sdram_csn,       // chip select
+    output sdram_clk,       // clock to SDRAM
+    output sdram_cke,       // clock enable to SDRAM
+    output sdram_rasn,      // SDRAM RAS
+    output sdram_casn,      // SDRAM CAS
+    output sdram_wen,       // SDRAM write-enable
+    output [12:0] sdram_a,  // SDRAM address bus
+    output [1:0] sdram_ba,  // SDRAM bank-address
+    output [1:0] sdram_dqm, // byte select
+    inout [15:0] sdram_d,   // data bus to/from SDRAM
+
     output ftdi_rxd
 );
     // assign wifi_gpio0 = 1'b1;
 
     // begin PLL
+`ifdef VERILATOR
+    wire clk_sys = clk_25mhz;
+    assign sdram_clk = clk_25mhz;
+`else
     wire locked;
     wire [3:0] clocks;
     ecp5pll
@@ -28,6 +44,10 @@ module top
     );
 
     wire clk_sys     = clocks[0];
+    assign sdram_clk = clocks[1];
+`endif
+
+    assign sdram_cke = 1'b1;
     // end PLL
 
     // TODO: can we use some SystemVerilog structure for this?
@@ -116,7 +136,7 @@ module top
     wire[ 3:0] cpu_mem_wstrb;
     wire[31:0] bootrom_data;
     reg[31:0] cpu_io_rdata;
-    enum { MEM_BOOTROM, MEM_IO } cpu_mem_select;
+    enum { MEM_BOOTROM, MEM_IO, MEM_SDRAM } cpu_mem_select;
 
     reg uart_wr_strobe;
     reg[7:0] uart_data;
@@ -172,7 +192,9 @@ module top
         .mem_addr(cpu_mem_addr),
         .mem_wdata(cpu_mem_wdata),
         .mem_wstrb(cpu_mem_wstrb),
-        .mem_rdata(cpu_mem_select == MEM_BOOTROM ? bootrom_data : cpu_io_rdata)
+        .mem_rdata(cpu_mem_select == MEM_BOOTROM ? bootrom_data :
+                   cpu_mem_select == MEM_SDRAM ? sdram_rdata :
+                   cpu_io_rdata)
 
         // Look-Ahead Interface
         // output            mem_la_read,
@@ -207,6 +229,29 @@ module top
         .q_o(bootrom_data)
     );
 
+    reg sdram_rd;      // not strobe -- keep up until ACK (TODO verify)
+    reg sdram_wr;
+    wire[15:0] sdram_rdata;
+    reg sdram_ack;
+    wire sdram_rdy;
+
+    sdram_pnru sdram_pnru_inst(
+        .sys_clk(clk_sys),
+        .sys_rd(sdram_rd),
+        .sys_wr(sdram_wr),
+        .sys_ab(cpu_mem_addr[23:1]),
+        .sys_di(cpu_mem_wdata),
+        .sys_do(sdram_rdata),
+        .sys_ack(sdram_ack),
+        .sys_rdy(sdram_rdy),
+
+        .sdr_ab(sdram_a),
+        .sdr_db(sdram_d),
+        .sdr_ba(sdram_ba),
+        .sdr_n_CS_WE_RAS_CAS({sdram_csn, sdram_wen, sdram_rasn, sdram_casn}),
+        .sdr_dqm(sdram_dqm)
+    );
+
     uart #(
         .CLK_FREQ_HZ(25_000_000),
         .BAUDRATE(115_200)
@@ -226,17 +271,27 @@ module top
     // Memory control
 
     parameter IO_SPACE_START = 32'h0000_1000;
+    parameter SDRAM_START = 32'h4000_0000;
 
-    enum { STATE_IDLE, STATE_FINISHED } mem_state;
+    // keep number of top-level states to a minimum so that high-fanout expressions like 'is_valid_io_write' are simple
+    enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT } mem_state;
 
     wire is_io_addr = (cpu_mem_addr[31:12] == IO_SPACE_START[31:12]);       // TODO: can be relaxed
+    wire is_sdram_addr = (cpu_mem_addr[31:29] == SDRAM_START[31:29]);       // TODO: can be relaxed
     wire is_valid_io_write = (mem_state == STATE_IDLE && cpu_mem_valid && is_io_addr && cpu_mem_wstrb != 0);
+
+    reg[1:0] waitstate_counter;
 
     always @ (posedge clk_sys) begin
         cpu_mem_ready <= 1'b0;
+        sdram_ack <= 0;     // really single cycle strobe?
 
         if (!reset_n) begin
+            mem_state <= STATE_IDLE;
             cpu_mem_select <= MEM_BOOTROM;
+            sdram_rd <= 0;
+            sdram_wr <= 0;
+            waitstate_counter <= 0;
         end else begin
             if (cpu_mem_valid) begin
                 // $display("MEM VALID %08X", cpu_mem_addr);
@@ -244,6 +299,8 @@ module top
 
             case (mem_state)
             STATE_IDLE: begin
+                waitstate_counter <= 0;
+
                 // Request to start memory operation?
 
                 if (cpu_mem_valid) begin
@@ -254,6 +311,17 @@ module top
                         cpu_mem_ready <= 1'b1;
                         cpu_mem_select <= MEM_IO;
                         mem_state <= STATE_FINISHED;
+                    end else if (is_sdram_addr) begin
+                        // TODO: implement 32-bit access
+                        // FIXME: do we need to stall in this state if SDRAM is not ready? (initing/refreshing)
+                        if (cpu_mem_wstrb == 0) begin
+                            sdram_rd <= 1;      // TODO: can we short these to be asserted one cycle faster?
+                        end else begin
+                            sdram_wr <= 1;
+                        end
+
+                        cpu_mem_select <= MEM_SDRAM;
+                        mem_state <= STATE_SDRAM_WAIT;
                     end else begin
                         // ROM read (or a futile attempt to write)
                         // ROM read finishes simultaneously and so will the setting of the RDATA mux
@@ -265,8 +333,23 @@ module top
                 end
             end
 
+            STATE_SDRAM_WAIT: begin
+                // 1 cycle to propagate request to SDRAM
+                // 1 cycle to see de-asserted SDRAM rdy
+                if (waitstate_counter < 2) begin
+                    waitstate_counter <= waitstate_counter + 1;
+                end else if (sdram_rdy) begin
+                    sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK? what if ACK arrives 1 cycle earlier?
+                    sdram_wr <= 0;
+                    mem_state <= STATE_FINISHED;
+                    cpu_mem_ready <= 1'b1;
+                end
+
+            end
+
             STATE_FINISHED: begin
                 mem_state <= STATE_IDLE;
+                sdram_ack <= 1;         // OK to only be ACKing when already ready for next request?
             end
             endcase
         end
@@ -317,13 +400,13 @@ module top
         end
     end
 
-    assign led[0] = cpu_mem_valid;
-    assign led[1] = cpu_mem_ready;
-    assign led[2] = cpu_mem_wstrb[0];
-    assign led[3] = cpu_mem_wstrb[1];
-    assign led[4] = cpu_mem_wstrb[2];
-    assign led[5] = cpu_mem_wstrb[3];
-    assign led[6] = 1'b0;
-    assign led[7] = bg_col[23];
-    // assign led = col_data;
+    // assign led[0] = cpu_mem_valid;
+    // assign led[1] = cpu_mem_ready;
+    // assign led[2] = 0;
+    // assign led[3] = 0;
+    // assign led[4] = 0;
+    // assign led[5] = is_valid_io_write;
+    // assign led[6] = (mem_state != STATE_SDRAM_WAIT);
+    // assign led[7] = (mem_state == STATE_SDRAM_WAIT);
+    assign led = uart_data;
 endmodule

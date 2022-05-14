@@ -5,7 +5,7 @@ module CPU_Rom(
     output reg [(data_width-1):0] q_o
 );
     parameter data_width = 32;
-    parameter addr_width = 8;
+    parameter addr_width = 12;
 
     reg [data_width-1:0] rom[2**addr_width-1:0];
     initial
