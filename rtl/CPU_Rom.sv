@@ -4,8 +4,9 @@ module CPU_Rom(
 
     output reg [(data_width-1):0] q_o
 );
+    // 1024 words x 32 bits
     parameter data_width = 32;
-    parameter addr_width = 12;
+    parameter addr_width = 10;
 
     reg [data_width-1:0] rom[2**addr_width-1:0];
     initial

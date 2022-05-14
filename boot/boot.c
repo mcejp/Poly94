@@ -3,14 +3,13 @@
 #define TRACE_REG (*(uint32_t volatile*)0x1000)
 #define BG_COLOR (*(uint32_t volatile*)0x1004)
 
-// must be addressed in increments of /32 but actually only lower /16 is read/written
+// only /16 and /32 addressing works at the moment
 #define message_sdram_x32 ((uint32_t volatile*)0x40000000)
+#define message_sdram_x16 ((uint16_t volatile*)0x40000000)
 
 static const char message[] = "Hello world from SDRAM!\r\n";
 
 #define MSG_LEN (sizeof(message) - 1)
-
-// WATCH OUT: Don't have any stack yet! (only 16-bit access to SDRAM works)
 
 __attribute__((always_inline))
 static inline void Putc(char c) {
@@ -42,7 +41,6 @@ static inline void Puts(const char* str) {
     }
 }
 
-__attribute__((naked))
 void bootldr() {
     // TRACE_REG = 'H';
     // TRACE_REG = 'e';
@@ -52,7 +50,7 @@ void bootldr() {
     // TRACE_REG = '\n';
 
     for (int i = 0; i < MSG_LEN; i++) {
-        message_sdram_x32[i] = message[i];
+        message_sdram_x16[i] = message[i];
     }
 
     message_sdram_x32[100] = 0x12345678;
@@ -67,6 +65,6 @@ void bootldr() {
             Puts("\n\n");
         }
 
-        Putc(message_sdram_x32[i % MSG_LEN]);
+        Putc(message_sdram_x16[i % MSG_LEN]);
     }
 }

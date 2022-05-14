@@ -9,7 +9,7 @@
 //
 module sdram_pnru (
     // system interface
-    input  wire        sys_clk,             // CLK 125 Mhz
+    input  wire        sys_clk,             // CLK 25 Mhz
     input  wire        sys_rd,              // read word
     input  wire        sys_wr,              // write word
     output reg         sys_rdy = 1'b0,      // mem ready
@@ -25,6 +25,9 @@ module sdram_pnru (
     inout  wire [15:0] sdr_db,              // SDRAM data
     output reg   [1:0] sdr_dqm = 2'b11      // SDRAM DQM  
   );
+
+  // Datasheet: https://www.issi.com/WW/pdf/42-45S83200G-16160G.pdf
+  // (ulx3s v3.1.7: IS42S16160G-7TL)
 
   // SDRAM timing parameters
   localparam tRP = 3, tMRD = 2, tRCD = 3, tRC = 9, CL = 3;

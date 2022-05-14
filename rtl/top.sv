@@ -136,6 +136,7 @@ module top
     wire[ 3:0] cpu_mem_wstrb;
     wire[31:0] bootrom_data;
     reg[31:0] cpu_io_rdata;
+    reg[31:0] cpu_sdram_rdata;
     enum { MEM_BOOTROM, MEM_IO, MEM_SDRAM } cpu_mem_select;
 
     reg uart_wr_strobe;
@@ -193,7 +194,7 @@ module top
         .mem_wdata(cpu_mem_wdata),
         .mem_wstrb(cpu_mem_wstrb),
         .mem_rdata(cpu_mem_select == MEM_BOOTROM ? bootrom_data :
-                   cpu_mem_select == MEM_SDRAM ? sdram_rdata :
+                   cpu_mem_select == MEM_SDRAM ? cpu_sdram_rdata :
                    cpu_io_rdata)
 
         // Look-Ahead Interface
@@ -231,6 +232,8 @@ module top
 
     reg sdram_rd;      // not strobe -- keep up until ACK (TODO verify)
     reg sdram_wr;
+    reg[23:0] sdram_addr_x16;   // sdram address in 16-bit words (16M => 32MB)
+    reg[15:0] sdram_wdata;
     wire[15:0] sdram_rdata;
     reg sdram_ack;
     wire sdram_rdy;
@@ -239,8 +242,8 @@ module top
         .sys_clk(clk_sys),
         .sys_rd(sdram_rd),
         .sys_wr(sdram_wr),
-        .sys_ab(cpu_mem_addr[23:1]),
-        .sys_di(cpu_mem_wdata),
+        .sys_ab(sdram_addr_x16),
+        .sys_di(sdram_wdata),
         .sys_do(sdram_rdata),
         .sys_ack(sdram_ack),
         .sys_rdy(sdram_rdy),
@@ -312,12 +315,32 @@ module top
                         cpu_mem_select <= MEM_IO;
                         mem_state <= STATE_FINISHED;
                     end else if (is_sdram_addr) begin
-                        // TODO: implement 32-bit access
-                        // FIXME: do we need to stall in this state if SDRAM is not ready? (initing/refreshing)
-                        if (cpu_mem_wstrb == 0) begin
-                            sdram_rd <= 1;      // TODO: can we short these to be asserted one cycle faster?
-                        end else begin
+                        if (cpu_mem_wstrb == 4'b1111) begin
+                            // 32-bit write
+
                             sdram_wr <= 1;
+
+                            // low halfword first
+                            sdram_addr_x16 <= {cpu_mem_addr[31:2], 1'b0};
+                            sdram_wdata <= cpu_mem_wdata[15:0];
+                        end else if (cpu_mem_wstrb == 4'b0011 || cpu_mem_wstrb == 4'b1100) begin
+                            // 16-bit write
+                            sdram_wr <= 1;
+
+                            // convert from CPU interface to memory interface
+                            if (cpu_mem_wstrb == 4'b0011) begin
+                                sdram_addr_x16 <= {cpu_mem_addr[31:2], 1'b0};
+                                sdram_wdata <= cpu_mem_wdata[15:0];
+                            end else begin
+                                sdram_addr_x16 <= {cpu_mem_addr[31:2], 1'b1};
+                                sdram_wdata <= cpu_mem_wdata[31:16];
+                            end
+                        end else begin
+                            // read, must assume 32-bit
+                            sdram_rd <= 1;
+
+                            // low halfword first
+                            sdram_addr_x16 <= {cpu_mem_addr[31:2], 1'b0};
                         end
 
                         cpu_mem_select <= MEM_SDRAM;
@@ -338,11 +361,66 @@ module top
                 // 1 cycle to see de-asserted SDRAM rdy
                 if (waitstate_counter < 2) begin
                     waitstate_counter <= waitstate_counter + 1;
+                end else if (sdram_addr_x16[0] == 0 && sdram_ack == 1) begin
+                    // acknowledging 1st half of 32-bit read/write
+
+                    if (cpu_mem_wstrb != 0) begin
+                        sdram_wr <= 1;
+                    end else begin
+                        sdram_rd <= 1;
+                    end
+
+                    sdram_ack <= 0;
+
+                    // high halfword now
+                    sdram_addr_x16 <= {cpu_mem_addr[31:2], 1'b1};
+                    sdram_wdata <= cpu_mem_wdata[31:16];
+
+                    waitstate_counter <= 0;
                 end else if (sdram_rdy) begin
-                    sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK? what if ACK arrives 1 cycle earlier?
-                    sdram_wr <= 0;
-                    mem_state <= STATE_FINISHED;
-                    cpu_mem_ready <= 1'b1;
+                    // NB: None of this is async-safe
+
+                    if (cpu_mem_wstrb == 4'b1111) begin
+                        // 32-bit write
+
+                        if (sdram_addr_x16[0] == 0 && sdram_ack == 0) begin
+                            sdram_wr <= 0;
+                            sdram_ack <= 1;
+
+                            mem_state <= STATE_SDRAM_WAIT;
+                        end else if (sdram_addr_x16[0] == 1) begin
+                            // addr=1, sdram ready, wait done -> 32-bit write finished
+                            sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
+                            sdram_wr <= 0;
+                            mem_state <= STATE_FINISHED;
+                            cpu_mem_ready <= 1'b1;
+                        end
+                    end else if (cpu_mem_wstrb == 4'b0011 || cpu_mem_wstrb == 4'b1100) begin
+                        // 16-bit write
+
+                        sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
+                        sdram_wr <= 0;
+                        mem_state <= STATE_FINISHED;
+                        cpu_mem_ready <= 1'b1;
+                    end else begin
+                        // 32-bit read
+
+                        if (sdram_addr_x16[0] == 0 && sdram_ack == 0) begin
+                            cpu_sdram_rdata[15:0] <= sdram_rdata;
+                            sdram_rd <= 0;
+                            sdram_ack <= 1;
+
+                            mem_state <= STATE_SDRAM_WAIT;
+                        end else if (sdram_addr_x16[0] == 1) begin
+                            cpu_sdram_rdata[31:16] <= sdram_rdata;
+
+                            // addr=1, sdram ready, wait done -> 32-bit read finished
+                            sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
+                            sdram_wr <= 0;
+                            mem_state <= STATE_FINISHED;
+                            cpu_mem_ready <= 1'b1;
+                        end
+                    end
                 end
 
             end
