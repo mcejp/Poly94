@@ -92,6 +92,6 @@ prog: ulx3s.bit
 	fujprog ulx3s.bit
 
 sim:
-	verilator --top-module top -Irtl -Irtl/ip -Wno-fatal --cc --exe sim/sim_main.cpp rtl/top.sv
-	$(MAKE) -C obj_dir -f Vtop.mk
+	verilator --top-module top -Irtl -Irtl/ip -Wno-fatal --cc --exe --trace sim/sim_main.cpp rtl/top.sv
+	$(MAKE) -C obj_dir -f Vtop.mk -j
 	obj_dir/Vtop
