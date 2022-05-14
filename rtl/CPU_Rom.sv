@@ -11,7 +11,12 @@ module CPU_Rom(
     reg [data_width-1:0] rom[2**addr_width-1:0];
     initial
     begin
+        `ifdef SYNTHESIS
+        $readmemh("boot/boot_syn.vh", rom);     // placeholder that is patched at later stage
+                                                // thus permitting ROM update without resynthesis
+        `else
         $readmemh("boot/boot.vh", rom);
+        `endif
     end
 
     always @ (posedge clk_i)
