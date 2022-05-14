@@ -15,7 +15,7 @@ int main(int argc, char** argv, char** env) {
 
    trace.open("sim.vcd");
 
-   for (int i = 0; i < 1000 && !Verilated::gotFinish(); i++) {
+   for (int i = 0; i < 3000 && !Verilated::gotFinish(); i++) {
       // if (i > 10) {
       //    top.rootp->cpu.resetn = 1;
       // }

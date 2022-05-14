@@ -1,5 +1,5 @@
 TOOLCHAIN=riscv-none-embed-
-ARCHFLAGS=-march=rv32e -mabi=ilp32e
+ARCHFLAGS=-march=rv32i -mabi=ilp32
 
 AS=$(TOOLCHAIN)as
 CC=$(TOOLCHAIN)gcc
@@ -9,7 +9,7 @@ OBJDUMP=$(TOOLCHAIN)objdump
 SIZE=$(TOOLCHAIN)size
 STRIP=$(TOOLCHAIN)strip
 
-CFLAGS=-ffreestanding -ffunction-sections -fdata-sections -Os -Wall
+CFLAGS=-ffreestanding -ffunction-sections -fdata-sections -Os -Wall -Werror
 LDFLAGS=-Wl,--gc-sections -nostartfiles -nostdlib
 
 OUTPUT=boot.bin
