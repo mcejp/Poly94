@@ -1,4 +1,4 @@
-.PHONY: all
+.PHONY: all sim
 .DELETE_ON_ERROR:
 TOPMOD  := top
 VLOGFIL := $(TOPMOD).v
@@ -90,3 +90,8 @@ poly94.json: poly94.ys \
 
 prog: ulx3s.bit
 	fujprog ulx3s.bit
+
+sim:
+	verilator --top-module top -Irtl -Irtl/ip -Wno-fatal --cc --exe sim/sim_main.cpp rtl/top.sv
+	$(MAKE) -C obj_dir -f Vtop.mk
+	obj_dir/Vtop
