@@ -8,7 +8,8 @@ read_verilog \
     rtl/tmds_encoder.v \
     rtl/vga2dvid.v \
     rtl/ip/picorv32.v \
-    rtl/ip/sdram_pnru.v
+    rtl/ip/sdram_pnru.v \
+    rtl/ip/VexRiscv.v
 read_verilog -sv \
     rtl/CPU_Rom.sv \
     rtl/top.sv \

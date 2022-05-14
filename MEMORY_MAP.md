@@ -4,6 +4,8 @@
 
 0x4000_0000 .. 0x41ff_ffff   32M  SDRAM
 
+0x8000_0000 .. 0xffff_ffff        uncached mirror of the lower half
+                                  (note: instructions are always cached)
 
 0x0000_1000  TRACE_REG
   - write to send on UART (8 bits)

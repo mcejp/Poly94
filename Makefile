@@ -89,6 +89,7 @@ poly94.json: poly94.ys \
 		rtl/ecp5/ecp5pll.sv \
 		rtl/ip/picorv32.v \
 		rtl/ip/sdram_pnru.v \
+		rtl/ip/VexRiscv.v \
 		rtl/ip/uart.sv \
 		boot/boot_syn.vh
 	yosys -m ghdl poly94.ys

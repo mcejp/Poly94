@@ -128,12 +128,6 @@ module top
     );
 `endif
 
-    wire cpu_mem_valid;
-    reg cpu_mem_ready;
-
-    wire[31:0] cpu_mem_addr;
-    wire[31:0] cpu_mem_wdata;
-    wire[ 3:0] cpu_mem_wstrb;
     wire[31:0] bootrom_data;
     reg[31:0] cpu_io_rdata;
     reg[31:0] cpu_sdram_rdata;
@@ -154,78 +148,70 @@ module top
         end
     end
 
-    picorv32 cpu// #(
-        // parameter [ 0:0] ENABLE_COUNTERS = 1,
-        // parameter [ 0:0] ENABLE_COUNTERS64 = 1,
-        // parameter [ 0:0] ENABLE_REGS_16_31 = 1,
-        // parameter [ 0:0] ENABLE_REGS_DUALPORT = 1,
-        // parameter [ 0:0] LATCHED_MEM_RDATA = 0,
-        // parameter [ 0:0] TWO_STAGE_SHIFT = 1,
-        // parameter [ 0:0] BARREL_SHIFTER = 0,
-        // parameter [ 0:0] TWO_CYCLE_COMPARE = 0,
-        // parameter [ 0:0] TWO_CYCLE_ALU = 0,
-        // parameter [ 0:0] COMPRESSED_ISA = 0,
-        // parameter [ 0:0] CATCH_MISALIGN = 1,
-        // parameter [ 0:0] CATCH_ILLINSN = 1,
-        // parameter [ 0:0] ENABLE_PCPI = 0,
-        // parameter [ 0:0] ENABLE_MUL = 0,
-        // parameter [ 0:0] ENABLE_FAST_MUL = 0,
-        // parameter [ 0:0] ENABLE_DIV = 0,
-        // parameter [ 0:0] ENABLE_IRQ = 0,
-        // parameter [ 0:0] ENABLE_IRQ_QREGS = 1,
-        // parameter [ 0:0] ENABLE_IRQ_TIMER = 1,
-        // parameter [ 0:0] ENABLE_TRACE = 0,
-        // parameter [ 0:0] REGS_INIT_ZERO = 0,
-        // parameter [31:0] MASKED_IRQ = 32'h 0000_0000,
-        // parameter [31:0] LATCHED_IRQ = 32'h ffff_ffff,
-        // parameter [31:0] PROGADDR_RESET = 32'h 0000_0000,
-        // parameter [31:0] PROGADDR_IRQ = 32'h 0000_0010,
-        // parameter [31:0] STACKADDR = 32'h ffff_ffff
-    //)
-    (
+    wire cpu_dBus_cmd_valid;
+    reg cpu_dBus_cmd_ready;
+    wire cpu_dBus_cmd_payload_wr;
+    wire[31:0] cpu_dBus_cmd_payload_address;
+    wire[31:0] cpu_dBus_cmd_payload_data;
+    wire[3:0] cpu_dBus_cmd_payload_mask;
+    wire[2:0] cpu_dBus_cmd_payload_size;
+    wire cpu_dBus_cmd_payload_last;
+    reg cpu_dBus_rsp_valid;
+    //reg cpu_dBus_rsp_payload_last;  -- seems to be happily ignored
+
+    wire cpu_iBus_cmd_valid;
+    wire cpu_iBus_cmd_ready;
+    wire[31:0] cpu_iBus_cmd_payload_address;
+    wire[2:0] cpu_iBus_cmd_payload_size;
+    reg cpu_iBus_rsp_valid;
+
+    // This interface took a bunch of reverse engineering:
+    //  - cmd_payload_address is always in bytes
+    //
+    //  - dBus_cmd_ready must go down in 0 cycles otherwise the CPU will keep feeding commands
+    //  - dBus_cmd_valid will go down simultaneously with dBus_cmd_ready; in that sense, it is a 1-cycle strobe
+    //    However, it may be asserted even while dBus_cmd_ready and it will sit around and wait until cmd_ready=1 to clear itself
+    //  - dBus_rsp_valid must be strobed for a single cycle when data is valid and ONLY WHEN READING!
+    //  - *Bus_cmd_payload_size is log2 of the size in bytes. Note, however, that the interface always operates in units of 32 bits.
+    //  - as the commands are pipelined, all parameters of the transaction must be latched at cmd_valid=1
+    //
+    VexRiscv cpu(
         .clk(clk_sys),
-        .resetn(reset_n),      // needed!
+        .reset(~reset_n),
 
-        .mem_valid(cpu_mem_valid),
-        // output reg        mem_instr,
-        .mem_ready(cpu_mem_ready),
+        .dBus_cmd_valid(cpu_dBus_cmd_valid),
+        .dBus_cmd_ready(cpu_dBus_cmd_ready),
+        .dBus_cmd_payload_wr(cpu_dBus_cmd_payload_wr),
+        //output              dBus_cmd_payload_uncached,
+        .dBus_cmd_payload_address(cpu_dBus_cmd_payload_address),
+        .dBus_cmd_payload_data(cpu_dBus_cmd_payload_data),
+        .dBus_cmd_payload_mask(cpu_dBus_cmd_payload_mask),
+        .dBus_cmd_payload_size(cpu_dBus_cmd_payload_size),
+        .dBus_cmd_payload_last(cpu_dBus_cmd_payload_last),
+        .dBus_rsp_valid(cpu_dBus_rsp_valid),
+        .dBus_rsp_payload_last(0),
+        .dBus_rsp_payload_data(cpu_mem_select == MEM_IO ? cpu_io_rdata :
+                               cpu_mem_select == MEM_BOOTROM ? bootrom_data :
+                               cpu_sdram_rdata),
+        .dBus_rsp_payload_error(0),
 
-        .mem_addr(cpu_mem_addr),
-        .mem_wdata(cpu_mem_wdata),
-        .mem_wstrb(cpu_mem_wstrb),
-        .mem_rdata(cpu_mem_select == MEM_BOOTROM ? bootrom_data :
-                   cpu_mem_select == MEM_SDRAM ? cpu_sdram_rdata :
-                   cpu_io_rdata)
+        .iBus_cmd_valid(cpu_iBus_cmd_valid),
+        .iBus_cmd_ready(cpu_iBus_cmd_ready),    // this must be a 0-cycle signal
+        .iBus_cmd_payload_address(cpu_iBus_cmd_payload_address),
+        .iBus_cmd_payload_size(cpu_iBus_cmd_payload_size),
+        .iBus_rsp_valid(cpu_iBus_rsp_valid),
+        .iBus_rsp_payload_data(cpu_mem_select == MEM_BOOTROM ? bootrom_data :
+                               cpu_sdram_rdata),
+        .iBus_rsp_payload_error(0),
 
-        // Look-Ahead Interface
-        // output            mem_la_read,
-        // output            mem_la_write,
-        // output     [31:0] mem_la_addr,
-        // output reg [31:0] mem_la_wdata,
-        // output reg [ 3:0] mem_la_wstrb,
-
-        // Pico Co-Processor Interface (PCPI)
-        // output reg        pcpi_valid,
-        // output reg [31:0] pcpi_insn,
-        // output     [31:0] pcpi_rs1,
-        // output     [31:0] pcpi_rs2,
-        // input             pcpi_wr,
-        // input      [31:0] pcpi_rd,
-        // input             pcpi_wait,
-        // input             pcpi_ready,
-
-        // IRQ Interface
-        // input      [31:0] irq,
-        // output reg [31:0] eoi,
-
-        // Trace Interface
-        // output reg        trace_valid,
-        // output reg [35:0] trace_data
+        .timerInterrupt(0),
+        .externalInterrupt(0),
+        .softwareInterrupt(0)
     );
 
     CPU_Rom bootrom(
         .clk_i(clk_sys),
-        .addr_i(cpu_mem_addr[31:2]),
+        .addr_i(mem_addr[31:2]),
 
         .q_o(bootrom_data)
     );
@@ -276,18 +262,40 @@ module top
     parameter IO_SPACE_START = 32'h0000_1000;
     parameter SDRAM_START = 32'h4000_0000;
 
-    // keep number of top-level states to a minimum so that high-fanout expressions like 'is_valid_io_write' are simple
-    enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT } mem_state;
+    localparam CMD_SIZE_16BIT = 2'd1;
+    localparam CMD_SIZE_32BIT = 2'd2;
 
-    wire is_io_addr = (cpu_mem_addr[31:12] == IO_SPACE_START[31:12]);       // TODO: can be relaxed
-    wire is_sdram_addr = (cpu_mem_addr[31:29] == SDRAM_START[31:29]);       // TODO: can be relaxed
-    wire is_valid_io_write = (mem_state == STATE_IDLE && cpu_mem_valid && is_io_addr && cpu_mem_wstrb != 0);
+    // keep number of top-level states to a minimum so that high-fanout expressions like 'is_valid_io_write' are simple
+    enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_BURST_READ_BOOTROM, STATE_SDRAM_ACK } mem_state;
+
+    wire is_io_addr = (cpu_dBus_cmd_payload_address[30:12] == IO_SPACE_START[30:12]);       // TODO: can be relaxed
+    wire is_sdram_addr = (cpu_dBus_cmd_payload_address[30:29] == SDRAM_START[30:29]);       // TODO: can be relaxed
+    wire is_valid_io_write = (mem_state == STATE_IDLE && cpu_dBus_cmd_valid && is_io_addr && cpu_dBus_cmd_payload_wr);
 
     reg[1:0] waitstate_counter;
+    reg[2:0] words_remaining;       // up to 7
+
+    reg[31:0] mem_addr;
+    reg mem_is_wr;
+    reg[2:0] mem_size;
+    reg[31:0] mem_wdata;          // we never use the lower half, but it will be optimized out
+
+    enum { PURPOSE_I, PURPOSE_D } mem_purpose;
+
+    reg reading_bootrom;
+
+    always @ (*) begin
+        // ready must go down in 0 clocks, otherwise we will be flooded with further requests
+        cpu_dBus_cmd_ready <= (mem_state == STATE_IDLE);
+    end
 
     always @ (posedge clk_sys) begin
-        cpu_mem_ready <= 1'b0;
         sdram_ack <= 0;     // really single cycle strobe?
+
+        reading_bootrom <= 0;
+
+        cpu_iBus_rsp_valid <= 0;
+        cpu_dBus_rsp_valid <= 0;
 
         if (!reset_n) begin
             mem_state <= STATE_IDLE;
@@ -296,63 +304,100 @@ module top
             sdram_wr <= 0;
             waitstate_counter <= 0;
         end else begin
-            if (cpu_mem_valid) begin
-                // $display("MEM VALID %08X", cpu_mem_addr);
-            end
-
             case (mem_state)
             STATE_IDLE: begin
                 waitstate_counter <= 0;
 
                 // Request to start memory operation?
+                // Q: should we prioritize D-requests or I-requests?
 
-                if (cpu_mem_valid) begin
-                    if (is_io_addr) begin
-                        // IO read/write is processed simultaneously, we can go directly to FINISHED
-                        // (CPU just needs 1 clock to de-assert valid_o)
+                // Permissible operations:
+                //
+                //  - I-bus read from ROM (burst)
+                //
+                //  - D-bus read from ROM (always treated as 32-bit, burst allowed?)
+                //  - D-bus read from IO (always treated as 32-bit, burst allowed?)
+                //  - D-bus read from SDRAM (??, burst allowed)
+                //
+                //  - D-bus write to IO (always treated as 32-bit)
+                //  - D-bus write to SDRAM
 
-                        cpu_mem_ready <= 1'b1;
-                        cpu_mem_select <= MEM_IO;
-                        mem_state <= STATE_FINISHED;
-                    end else if (is_sdram_addr) begin
-                        if (cpu_mem_wstrb == 4'b1111) begin
-                            // 32-bit write
+                if (cpu_dBus_cmd_valid) begin
+                  mem_addr <= cpu_dBus_cmd_payload_address;
+                  mem_is_wr <= cpu_dBus_cmd_payload_wr;
+                  mem_size <= cpu_dBus_cmd_payload_size;
+                  mem_wdata <= cpu_dBus_cmd_payload_data;
 
-                            sdram_wr <= 1;
+                  if (cpu_dBus_cmd_payload_wr && cpu_dBus_cmd_payload_size == CMD_SIZE_32BIT) begin
+                    // 32-bit write. ASSUMING SDRAM.
 
-                            // low halfword first
-                            sdram_addr_x16 <= {cpu_mem_addr[31:2], 1'b0};
-                            sdram_wdata <= cpu_mem_wdata[15:0];
-                        end else if (cpu_mem_wstrb == 4'b0011 || cpu_mem_wstrb == 4'b1100) begin
-                            // 16-bit write
-                            sdram_wr <= 1;
+                    $display("begin 32-bit write [%08Xh] <= %08Xh sz=%d", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_data, cpu_dBus_cmd_payload_size);
 
-                            // convert from CPU interface to memory interface
-                            if (cpu_mem_wstrb == 4'b0011) begin
-                                sdram_addr_x16 <= {cpu_mem_addr[31:2], 1'b0};
-                                sdram_wdata <= cpu_mem_wdata[15:0];
-                            end else begin
-                                sdram_addr_x16 <= {cpu_mem_addr[31:2], 1'b1};
-                                sdram_wdata <= cpu_mem_wdata[31:16];
-                            end
-                        end else begin
-                            // read, must assume 32-bit
-                            sdram_rd <= 1;
+                    mem_state <= STATE_SDRAM_WAIT;
 
-                            // low halfword first
-                            sdram_addr_x16 <= {cpu_mem_addr[31:2], 1'b0};
-                        end
+                    // low halfword first
+                    sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[31:2], 1'b0};
+                    sdram_wdata <= cpu_dBus_cmd_payload_data[15:0];
+                    sdram_wr <= 1;
+                  end else if (cpu_dBus_cmd_payload_wr && cpu_dBus_cmd_payload_size == CMD_SIZE_16BIT) begin
+                    // 16-bit write. ASSUMING SDRAM.
+
+                    $display("begin 16-bit write [%08Xh] <= %04Xh", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_data[15:0]);
+
+                    mem_state <= STATE_SDRAM_WAIT;
+
+                    sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[31:1]};
+                    sdram_wdata <= cpu_dBus_cmd_payload_data[15:0];
+                    sdram_wr <= 1;
+                  end else if (!cpu_dBus_cmd_payload_wr) begin
+                    if (cpu_dBus_cmd_payload_size >= CMD_SIZE_32BIT) begin
+                      words_remaining <= (1 << (cpu_dBus_cmd_payload_size - 2)) - 1;
+                    end else begin
+                      words_remaining <= 0;
+                    end
+
+                    // 32-bit read. Can be BootROM or SDRAM
+                    if (cpu_dBus_cmd_payload_address[31:29] == SDRAM_START[31:29]) begin
+                        $display("begin 32-bit read [%08Xh] msk=%04b sz=%d", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
+
+                        // low halfword first
+                        sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[31:2], 1'b0};
+                        sdram_rd <= 1;
 
                         cpu_mem_select <= MEM_SDRAM;
                         mem_state <= STATE_SDRAM_WAIT;
+                    end else if (is_io_addr && cpu_dBus_cmd_payload_size == CMD_SIZE_32BIT) begin
+                        $display("begin IO read [%08Xh] msk=%04b sz=%d", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
+
+                        cpu_mem_select <= MEM_IO;
+
+                        mem_state <= STATE_FINISHED;
+                        cpu_dBus_rsp_valid <= 1;
                     end else begin
                         // ROM read (or a futile attempt to write)
                         // ROM read finishes simultaneously and so will the setting of the RDATA mux
+                        $display("begin ROM read [%08Xh] msk=%04b sz=%d", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
 
-                        cpu_mem_ready <= 1'b1;
                         cpu_mem_select <= MEM_BOOTROM;
-                        mem_state <= STATE_FINISHED;
+                        mem_state <= STATE_BURST_READ_BOOTROM;
+
+                        mem_purpose <= PURPOSE_D;
                     end
+                  end else begin
+                    $display("begin INVALID OP [%08Xh] is_wr=%d msk=%04b sz=%d", cpu_dBus_cmd_payload_address,
+                        cpu_dBus_cmd_payload_wr, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
+                  end
+                end else if (cpu_iBus_cmd_valid) begin
+                    // Instruction bus read. Always a series of 32-bit words. ASSUMING BOOTROM.
+                    // There is no 'last' signal; we have to look at 'size' (which is log2(bytes_to_read)) and loop
+
+                    $display("begin 32-bit burst ROM read via I-bus [%08Xh]", cpu_iBus_cmd_payload_address);
+
+                    words_remaining <= (1 << (cpu_iBus_cmd_payload_size - 2)) - 1;
+
+                    mem_addr <= cpu_iBus_cmd_payload_address;
+                    mem_state <= STATE_BURST_READ_BOOTROM;
+                    mem_purpose <= PURPOSE_I;
                 end
             end
 
@@ -362,9 +407,9 @@ module top
                 if (waitstate_counter < 2) begin
                     waitstate_counter <= waitstate_counter + 1;
                 end else if (sdram_addr_x16[0] == 0 && sdram_ack == 1) begin
-                    // acknowledging 1st half of 32-bit read/write
+                    // in process of acknowledging 1st half of 32-bit read/write
 
-                    if (cpu_mem_wstrb != 0) begin
+                    if (mem_is_wr) begin
                         sdram_wr <= 1;
                     end else begin
                         sdram_rd <= 1;
@@ -373,14 +418,15 @@ module top
                     sdram_ack <= 0;
 
                     // high halfword now
-                    sdram_addr_x16 <= {cpu_mem_addr[31:2], 1'b1};
-                    sdram_wdata <= cpu_mem_wdata[31:16];
+                    sdram_addr_x16 <= {mem_addr[31:2], 1'b1};
+                    sdram_wdata <= mem_wdata[31:16];
 
                     waitstate_counter <= 0;
                 end else if (sdram_rdy) begin
                     // NB: None of this is async-safe
 
-                    if (cpu_mem_wstrb == 4'b1111) begin
+                    if (mem_is_wr) begin
+                      if (mem_size == CMD_SIZE_32BIT) begin
                         // 32-bit write
 
                         if (sdram_addr_x16[0] == 0 && sdram_ack == 0) begin
@@ -393,19 +439,21 @@ module top
                             sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
                             sdram_wr <= 0;
                             mem_state <= STATE_FINISHED;
-                            cpu_mem_ready <= 1'b1;
                         end
-                    end else if (cpu_mem_wstrb == 4'b0011 || cpu_mem_wstrb == 4'b1100) begin
+                      end else begin
                         // 16-bit write
 
                         sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
                         sdram_wr <= 0;
                         mem_state <= STATE_FINISHED;
-                        cpu_mem_ready <= 1'b1;
+
+                      end
                     end else begin
                         // 32-bit read
 
                         if (sdram_addr_x16[0] == 0 && sdram_ack == 0) begin
+                            // Acknowledge low halfword
+
                             cpu_sdram_rdata[15:0] <= sdram_rdata;
                             sdram_rd <= 0;
                             sdram_ack <= 1;
@@ -417,19 +465,68 @@ module top
                             // addr=1, sdram ready, wait done -> 32-bit read finished
                             sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
                             sdram_wr <= 0;
-                            mem_state <= STATE_FINISHED;
-                            cpu_mem_ready <= 1'b1;
+
+                            cpu_dBus_rsp_valid <= 1;
+
+                            $display("  finished 32-bit SDRAM read [%08X]", mem_addr);
+
+                            if (words_remaining == 0) begin
+                                mem_state <= STATE_FINISHED;
+                            end else begin
+                                mem_state <= STATE_SDRAM_ACK;
+
+                                cpu_mem_select <= MEM_SDRAM;
+                                sdram_ack <= 1;   // not async safe etc.
+                            end
+
+                            waitstate_counter <= 0;
+
+                            mem_addr <= mem_addr + 4;
+                            words_remaining <= words_remaining - 1;
                         end
                     end
                 end
 
             end
 
+            STATE_SDRAM_ACK: begin
+              // low halfword first
+              sdram_addr_x16 <= {mem_addr[31:2], 1'b0};
+              sdram_rd <= 1;
+              mem_state <= STATE_SDRAM_WAIT;
+              sdram_ack <= 0;
+            end
+
             STATE_FINISHED: begin
                 mem_state <= STATE_IDLE;
                 sdram_ack <= 1;         // OK to only be ACKing when already ready for next request?
             end
+
+            STATE_BURST_READ_BOOTROM: begin
+                if (mem_purpose == PURPOSE_I) begin
+                    cpu_iBus_rsp_valid <= 1'b1;
+                end else begin
+                    cpu_dBus_rsp_valid <= 1;
+                end
+
+                reading_bootrom <= 1;
+
+                cpu_mem_select <= MEM_BOOTROM;
+
+                if (words_remaining == 0) begin
+                    mem_state <= STATE_FINISHED;
+                end else begin
+                    mem_state <= STATE_BURST_READ_BOOTROM;
+                end
+
+                mem_addr <= mem_addr + 4;
+                words_remaining <= words_remaining - 1;
+            end
             endcase
+        end
+
+        if (reading_bootrom) begin
+          $display("  ROM read => %08X", bootrom_data);
         end
     end
 
@@ -442,39 +539,24 @@ module top
             bg_col <= 0;
         end else begin
             // write TRACE_REG
-            if (is_valid_io_write && cpu_mem_addr[11:0] == 12'h000) begin
-                $display("WRITE CHAR '%c'", cpu_mem_wdata);
+            if (is_valid_io_write && cpu_dBus_cmd_payload_address[11:0] == 12'h000) begin
+                $display("WRITE CHAR '%c'", cpu_dBus_cmd_payload_data[7:0]);
 
                 uart_wr_strobe <= 1;
-                uart_data <= cpu_mem_wdata;
+                uart_data <= cpu_dBus_cmd_payload_data[7:0];
             end
 
             // write BG_COLOR
-            if (is_valid_io_write && cpu_mem_addr[11:0] == 12'h004) begin
-                $display("WRITE BG_COL %08X", cpu_mem_wdata);
-                if (cpu_mem_wdata != 0) begin
-                    bg_col <= cpu_mem_wdata;
+            if (is_valid_io_write && cpu_dBus_cmd_payload_address[11:0] == 12'h004) begin
+                $display("WRITE BG_COL %08X", cpu_dBus_cmd_payload_data);
+                if (cpu_dBus_cmd_payload_data != 0) begin
+                    bg_col <= cpu_dBus_cmd_payload_data;
                     //col_data <= cpu_mem_wdata[7:0] | cpu_mem_wdata[15:8] | cpu_mem_wdata[23:16] | cpu_mem_wdata[31:24];
                 end
             end
 
             //
             cpu_io_rdata = {31'h00000000, uart_busy};
-        end
-    end
-
-    // misc old shit
-
-    always @ (posedge clk_sys) begin
-        if (cpu_mem_valid && cpu_mem_wstrb != 0) begin
-            // $display("WRITE %08X <= %08X", cpu_mem_addr, cpu_mem_wdata);
-        end
-
-        // if (cpu_mem_valid && !cpu_mem_ready && cpu_mem_wstrb != 0)
-        //     col_data <= cpu_mem_addr[7:0];
-
-        if (cpu_mem_valid && cpu_mem_ready) begin
-            // $display("READ %08X => %08X", cpu_mem_addr, cpu_mem_rdata);
         end
     end
 
