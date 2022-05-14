@@ -27,7 +27,7 @@ output uart_tx_o;
 
 reg [3:0] bitcount;
 reg [8:0] shifter;
-reg uart_tx_o;
+reg uart_tx_o = 1;
 
 wire uart_busy_o = |bitcount[3:1];
 wire sending = |bitcount;
