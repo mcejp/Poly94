@@ -259,17 +259,14 @@ module top
 
     // Memory control
 
-    parameter IO_SPACE_START = 32'h0000_1000;
-    parameter SDRAM_START = 32'h4000_0000;
-
     localparam CMD_SIZE_16BIT = 2'd1;
     localparam CMD_SIZE_32BIT = 2'd2;
 
     // keep number of top-level states to a minimum so that high-fanout expressions like 'is_valid_io_write' are simple
     enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_BURST_READ_BOOTROM, STATE_SDRAM_ACK } mem_state;
 
-    wire is_io_addr = (cpu_dBus_cmd_payload_address[30:12] == IO_SPACE_START[30:12]);       // TODO: can be relaxed
-    wire is_sdram_addr = (cpu_dBus_cmd_payload_address[30:29] == SDRAM_START[30:29]);       // TODO: can be relaxed
+    wire is_io_addr =        (cpu_dBus_cmd_payload_address[27:24] == 4'h1);
+    wire is_sdram_addr =     (cpu_dBus_cmd_payload_address[27] == 1'b1);
     wire is_valid_io_write = (mem_state == STATE_IDLE && cpu_dBus_cmd_valid && is_io_addr && cpu_dBus_cmd_payload_wr);
 
     reg[1:0] waitstate_counter;
@@ -357,7 +354,7 @@ module top
                     end
 
                     // 32-bit read. Can be BootROM or SDRAM
-                    if (cpu_dBus_cmd_payload_address[31:29] == SDRAM_START[31:29]) begin
+                    if (is_sdram_addr) begin
                         $display("begin 32-bit read [%08Xh] msk=%04b sz=%d", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
 
                         // low halfword first

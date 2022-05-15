@@ -1,11 +1,11 @@
 #include <stdint.h>
 
-#define TRACE_REG (*(uint32_t volatile*)0x80001000)
-#define BG_COLOR (*(uint32_t volatile*)0x80001004)
+#define TRACE_REG           (*(uint32_t volatile*)0x81000000)
+#define BG_COLOR            (*(uint32_t volatile*)0x81000004)
 
 // only /16 and /32 addressing works at the moment
-#define message_sdram_x32 ((uint32_t volatile*)0x40000000)
-#define message_sdram_x16 ((uint16_t volatile*)0x40000000)
+#define message_sdram_x32   ((uint32_t volatile*)0x08000000)
+#define message_sdram_x16   ((uint16_t volatile*)0x08000000)
 
 static const char message[] = "Hello world from SDRAM!\r\n";
 
