@@ -69,7 +69,8 @@ ulx3s.bit: boot/boot.vh ulx3s_out.config
 ulx3s_out.config: poly94.json ulx3s_v20.lpf
 	nextpnr-ecp5 --85k --json poly94.json \
 		--lpf ulx3s_v20.lpf \
-		--textcfg ulx3s_out.config 
+		--textcfg ulx3s_out.config \
+		2>&1 | tee nextpnr.log
 
 boot/boot_syn.vh:
 	ecpbram --generate boot/boot_syn.vh --width 32 --depth 1024 --seed 0
@@ -92,7 +93,7 @@ poly94.json: poly94.ys \
 		rtl/ip/VexRiscv.v \
 		rtl/ip/uart.sv \
 		boot/boot_syn.vh
-	yosys -m ghdl poly94.ys
+	yosys -m ghdl poly94.ys | tee yosys.log
 
 prog: ulx3s.bit
 	fujprog ulx3s.bit
