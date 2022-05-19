@@ -241,9 +241,15 @@ module top
         .sdr_dqm(sdram_dqm)
     );
 
+`ifdef SYNTHESIS
+    parameter UART_BAUDRATE = 115_200;
+`else
+    parameter UART_BAUDRATE = 12_500_000;
+`endif
+
     uart #(
         .CLK_FREQ_HZ(25_000_000),
-        .BAUDRATE(115_200)
+        .BAUDRATE(UART_BAUDRATE)
     ) uart_inst(
         .clk_i(clk_sys),
         .rst_i(~reset_n),
@@ -465,7 +471,7 @@ module top
 
                             cpu_dBus_rsp_valid <= 1;
 
-                            $display("  finished 32-bit SDRAM read [%08X]", mem_addr);
+                            $display("  finished 32-bit SDRAM read [%08X] => %08X", mem_addr, {sdram_rdata, cpu_sdram_rdata[15:0]});
 
                             if (words_remaining == 0) begin
                                 mem_state <= STATE_FINISHED;

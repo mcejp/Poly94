@@ -16,12 +16,14 @@ VERILOG_SOURCES += rtl/clk_25_250_125_25.v \
 		rtl/ip/picorv32.v \
 		rtl/ip/sdram_pnru.v \
 		rtl/ip/VexRiscv.v \
-		rtl/ip/uart.sv
+		rtl/ip/uart.sv \
+		rtl/model/mt48lc16m16a2.v \
+		rtl/sim/top_sim.sv
 
 # use VHDL_SOURCES for VHDL files
 
 # TOPLEVEL is the name of the toplevel module in your Verilog or VHDL file
-TOPLEVEL = top
+TOPLEVEL = top_sim
 
 # MODULE is the basename of the Python test file
 MODULE = test_my_design
