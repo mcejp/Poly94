@@ -37,7 +37,11 @@ wire [28:0] dInc = d[28] ? (BAUDRATE) : (BAUDRATE - CLK_FREQ_HZ);
 wire [28:0] dNxt = d + dInc;
 always @(posedge clk_i)
 begin
-    d = dNxt;
+    if (rst_i) begin
+        d = 0;
+    end else begin
+        d = dNxt;
+    end
 end
 wire ser_clk = ~d[28]; // this is the bit clock
 
