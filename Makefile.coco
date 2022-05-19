@@ -1,0 +1,30 @@
+# Makefile
+
+# defaults
+SIM ?= icarus
+TOPLEVEL_LANG ?= verilog
+COMPILE_ARGS = -grelative-include
+
+VERILOG_SOURCES += rtl/clk_25_250_125_25.v \
+		rtl/CPU_Rom.sv \
+		rtl/pll.v \
+		rtl/RGB_Color_Bars_Generator.v \
+		rtl/Text_Generator.v \
+		rtl/tmds_encoder.v \
+		rtl/top.sv \
+		rtl/VGA_Timing_Generator.sv \
+		rtl/ip/picorv32.v \
+		rtl/ip/sdram_pnru.v \
+		rtl/ip/VexRiscv.v \
+		rtl/ip/uart.sv
+
+# use VHDL_SOURCES for VHDL files
+
+# TOPLEVEL is the name of the toplevel module in your Verilog or VHDL file
+TOPLEVEL = top
+
+# MODULE is the basename of the Python test file
+MODULE = test_my_design
+
+# include cocotb's make rules to take care of the simulator setup
+include $(shell cocotb-config --makefiles)/Makefile.sim

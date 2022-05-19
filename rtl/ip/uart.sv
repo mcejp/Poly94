@@ -3,7 +3,10 @@
 
 `default_nettype none
 
-module uart(
+module uart #(
+    parameter CLK_FREQ_HZ,
+    parameter BAUDRATE
+) (
     clk_i,
     rst_i,
 
@@ -13,9 +16,6 @@ module uart(
     uart_busy_o,        // High means UART is transmitting
     uart_tx_o           // UART transmit wire
 );
-
-parameter CLK_FREQ_HZ;
-parameter BAUDRATE;
 
 input uart_wr_strobe_i;
 input [7:0] uart_data_i;

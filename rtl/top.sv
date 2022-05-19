@@ -24,7 +24,7 @@ module top
     // assign wifi_gpio0 = 1'b1;
 
     // begin PLL
-`ifdef VERILATOR
+`ifndef SYNTHESIS
     wire clk_sys = clk_25mhz;
     assign sdram_clk = clk_25mhz;
 `else
@@ -79,7 +79,7 @@ module top
         .hsync_n_o(hsync_n1),
         .vsync_n_o(vsync_n1),
         .visible_o(blank_n1),
-        .rgb_o(color1),
+        .rgb_o(color1)
     );
 
     Text_Generator tg(
@@ -110,7 +110,7 @@ module top
         .data_i(8'd32)
     );
 
-`ifndef VERILATOR
+`ifdef SYNTHESIS
     hdmi_video hdmi_video
     (
         .clk_25mhz(clk_sys),

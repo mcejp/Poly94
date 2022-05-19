@@ -1,5 +1,9 @@
 obj_dir/
+sim_build/
+__pycache__/
 
-poly94.json
+/poly94.json
+/results.xml
 *.bit
 *.config
+*.log
