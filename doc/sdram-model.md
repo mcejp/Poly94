@@ -1,0 +1,3 @@
+- We use mt48lc16m16a2.v from Micron
+- Some comments + alternatives linked here: https://old.reddit.com/r/FPGA/comments/a5e3ok/recommend_an_sdram_model_for_verilator/
+- Verilator compatibility is TODO (would certainly be nice, but if not feasible, can get away with a very simple, permissive model)

@@ -12,6 +12,7 @@ read_verilog \
     rtl/ip/VexRiscv.v
 read_verilog -sv \
     rtl/CPU_Rom.sv \
+    rtl/Memory_Ctrl.sv \
     rtl/top.sv \
     rtl/VGA_Timing_Generator.sv \
     rtl/ecp5/ecp5pll.sv \
