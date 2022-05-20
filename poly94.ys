@@ -10,7 +10,7 @@ read_verilog \
     rtl/ip/picorv32.v \
     rtl/ip/sdram_pnru.v \
     rtl/ip/VexRiscv.v
-read_verilog -sv \
+read_verilog -noassert -sv \
     rtl/CPU_Rom.sv \
     rtl/Memory_Ctrl.sv \
     rtl/top.sv \
