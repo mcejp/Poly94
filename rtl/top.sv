@@ -319,7 +319,7 @@ module top
         end else begin
             // write TRACE_REG
             if (mem_io_write_valid && mem_io_addr[11:0] == 12'h000) begin
-                $display("WRITE CHAR '%c'", mem_io_wdata[7:0]);
+                // $display("WRITE CHAR '%c'", mem_io_wdata[7:0]);
 
                 uart_wr_strobe <= 1;
                 uart_data <= mem_io_wdata[7:0];

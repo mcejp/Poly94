@@ -19,7 +19,7 @@ async def test_cpu_boot(dut):
         await Timer(PERIOD_NS / 2, units="ns")
 
         # Capture serial output
-        if dut.top_inst.uart_wr_strobe.value:
+        if not dut.top_inst.uart_busy.value and dut.top_inst.uart_wr_strobe.value:
             uart_log += bytes([dut.top_inst.uart_data.value])
 
             if uart_log == EXPECTED:

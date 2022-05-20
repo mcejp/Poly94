@@ -66,13 +66,15 @@ localparam CMD_SIZE_32BIT = 2'd2;
 // keep number of top-level states to a minimum so that high-fanout expressions like 'io_write_valid_o' are simple
 enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_BURST_READ_BOOTROM, STATE_SDRAM_ACK } mem_state;
 
-wire is_io_addr =        (cpu_dBus_cmd_payload_address[27:24] == 4'h1);
-wire is_sdram_addr =     (cpu_dBus_cmd_payload_address[27] == 1'b1);
+wire is_io_addr =         (cpu_dBus_cmd_payload_address[27:24] == 4'h1);
+wire dBus_is_sdram_addr = (cpu_dBus_cmd_payload_address[27] == 1'b1);
+wire iBus_is_sdram_addr = (cpu_iBus_cmd_payload_address[27] == 1'b1);
 assign io_write_valid_o = (mem_state == STATE_IDLE && cpu_dBus_cmd_valid && is_io_addr && cpu_dBus_cmd_payload_wr);
 
 reg[1:0] waitstate_counter;
 reg[2:0] words_remaining;       // up to 7
 
+// Note: to reduce contention we can duplicate mem_addr + words_remaining between ROM access & SDRAM access
 reg[31:0] mem_addr;
 reg mem_is_wr;
 reg[2:0] mem_size;
@@ -128,8 +130,8 @@ always @ (posedge clk_i) begin
               mem_size <= cpu_dBus_cmd_payload_size;
               mem_wdata <= cpu_dBus_cmd_payload_data;
 
-              if (cpu_dBus_cmd_payload_wr && cpu_dBus_cmd_payload_size == CMD_SIZE_32BIT) begin
-                // 32-bit write. ASSUMING SDRAM.
+              if (dBus_is_sdram_addr && cpu_dBus_cmd_payload_wr && cpu_dBus_cmd_payload_size == CMD_SIZE_32BIT) begin
+                // 32-bit SDRAM write
 
 `ifdef VERBOSE_MEMCTL
                 $display("begin 32-bit write [%08Xh] <= %08Xh sz=%d", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_data, cpu_dBus_cmd_payload_size);
@@ -177,7 +179,7 @@ always @ (posedge clk_i) begin
                 end
 
                 // 32-bit read. Can be BootROM or SDRAM
-                if (is_sdram_addr) begin
+                if (dBus_is_sdram_addr) begin
 `ifdef VERBOSE_MEMCTL
                     $display("begin 32-bit read [%08Xh] msk=%04b sz=%d", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
 `endif
@@ -209,6 +211,8 @@ always @ (posedge clk_i) begin
 
                     mem_purpose <= PURPOSE_D;
                 end
+              end else if (is_io_addr && cpu_dBus_cmd_payload_wr && cpu_dBus_cmd_payload_size == CMD_SIZE_32BIT) begin
+                // 32-bit IO write. Handled elsewhere, do nothing.
               end else begin
                 $display("begin INVALID OP [%08Xh] is_wr=%d msk=%04b sz=%d", cpu_dBus_cmd_payload_address,
                     cpu_dBus_cmd_payload_wr, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
