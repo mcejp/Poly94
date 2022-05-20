@@ -11,8 +11,7 @@ static const char message[] = "Hello world from SDRAM!\r\n";
 
 #define MSG_LEN (sizeof(message) - 1)
 
-__attribute__((always_inline))
-static inline void Putc(char c) {
+static void Putc(char c) {
     // wait while UART busy
     while (TRACE_REG & 1) {
     }
@@ -22,8 +21,7 @@ static inline void Putc(char c) {
 
 static const char hex[] = "0123456789ABCDEF";
 
-__attribute__((always_inline))
-static inline void Puth(uint32_t value) {
+static void Puth(uint32_t value) {
 	Putc(hex[value >> 28]);
 	Putc(hex[(value >> 24) & 0xf]);
 	Putc(hex[(value >> 20) & 0xf]);
@@ -34,8 +32,7 @@ static inline void Puth(uint32_t value) {
 	Putc(hex[value & 0xf]);
 }
 
-__attribute__((always_inline))
-static inline void Puts(const char* str) {
+static void Puts(const char* str) {
 	while (*str) {
 		Putc(*str++);
     }
