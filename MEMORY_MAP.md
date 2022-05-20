@@ -13,6 +13,13 @@
     0x8000_0000 .. 0xffff_ffff        uncached mirror of the lower half
                                       (note: instructions are always cached)
 
+
+Note: should take advantage of RV32's single-instruction calls relative to x0 to place some
+      commonly needed library functions (if GCC is able to benefit from them)
+
+TODO: reorganize memory map so that SDRAM addresses are more easily recognizable.
+      The '8' is confusing since it is also bit 31 for cache bypass.
+
 ## Decoding table
 
     bit  31     -> cache bypass
