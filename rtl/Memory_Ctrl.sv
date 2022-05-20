@@ -172,6 +172,7 @@ always @ (posedge clk_i) begin
                 sdram_wdata <= cpu_dBus_cmd_payload_data[15:0];
                 sdram_wr <= 1;
               end else if (!cpu_dBus_cmd_payload_wr) begin
+                // TODO: move out? or just wait until complete rewrite?
                 if (cpu_dBus_cmd_payload_size >= CMD_SIZE_32BIT) begin
                   words_remaining <= (1 << (cpu_dBus_cmd_payload_size - 2)) - 1;
                 end else begin
@@ -216,19 +217,37 @@ always @ (posedge clk_i) begin
                 $display("begin INVALID OP [%08Xh] is_wr=%d msk=%04b sz=%d", cpu_dBus_cmd_payload_address,
                     cpu_dBus_cmd_payload_wr, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
               end
+
+              mem_purpose <= PURPOSE_D;
             end else if (cpu_iBus_cmd_valid) begin
                 // Instruction bus read. Always a series of 32-bit words. ASSUMING BOOTROM.
                 // There is no 'last' signal; we have to look at 'size' (which is log2(bytes_to_read)) and loop
 
+                mem_addr <= cpu_iBus_cmd_payload_address;
+                mem_is_wr <= 0;
+
+                if (iBus_is_sdram_addr) begin
 `ifdef VERBOSE_MEMCTL
-                $display("begin 32-bit burst ROM read via I-bus [%08Xh]", cpu_iBus_cmd_payload_address);
+                    $display("begin 32-bit SDRAM read via I-bus [%08Xh] sz=%d", cpu_iBus_cmd_payload_address, cpu_iBus_cmd_payload_size);
 `endif
 
-                words_remaining <= (1 << (cpu_iBus_cmd_payload_size - 2)) - 1;
+                    // low halfword first
+                    sdram_addr_x16 <= {cpu_iBus_cmd_payload_address[31:2], 1'b0};
+                    sdram_rd <= 1;
 
-                mem_addr <= cpu_iBus_cmd_payload_address;
-                mem_state <= STATE_BURST_READ_BOOTROM;
+                    cpu_mem_select <= MEM_SDRAM;
+                    mem_state <= STATE_SDRAM_WAIT;
+                end else begin
+`ifdef VERBOSE_MEMCTL
+                    $display("begin 32-bit burst ROM read via I-bus [%08Xh]", cpu_iBus_cmd_payload_address);
+`endif
+
+                    mem_addr <= cpu_iBus_cmd_payload_address;
+                    mem_state <= STATE_BURST_READ_BOOTROM;
+                end
+
                 mem_purpose <= PURPOSE_I;
+                words_remaining <= (1 << (cpu_iBus_cmd_payload_size - 2)) - 1;
             end
         end
 
@@ -297,7 +316,11 @@ always @ (posedge clk_i) begin
                         sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
                         sdram_wr <= 0;
 
-                        cpu_dBus_rsp_valid <= 1;
+                        if (mem_purpose == PURPOSE_I) begin
+                            cpu_iBus_rsp_valid <= 1'b1;
+                        end else begin
+                            cpu_dBus_rsp_valid <= 1;
+                        end
 
 `ifdef VERBOSE_MEMCTL
                         $display("  finished 32-bit SDRAM read [%08X] => %08X", mem_addr, {sdram_rdata, cpu_sdram_rdata[15:0]});
