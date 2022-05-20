@@ -22,19 +22,19 @@ static void Putc(char c) {
 static const char hex[] = "0123456789ABCDEF";
 
 static void Puth(uint32_t value) {
-	Putc(hex[value >> 28]);
-	Putc(hex[(value >> 24) & 0xf]);
-	Putc(hex[(value >> 20) & 0xf]);
-	Putc(hex[(value >> 16) & 0xf]);
-	Putc(hex[(value >> 12) & 0xf]);
-	Putc(hex[(value >> 8) & 0xf]);
-	Putc(hex[(value >> 4) & 0xf]);
-	Putc(hex[value & 0xf]);
+    Putc(hex[value >> 28]);
+    Putc(hex[(value >> 24) & 0xf]);
+    Putc(hex[(value >> 20) & 0xf]);
+    Putc(hex[(value >> 16) & 0xf]);
+    Putc(hex[(value >> 12) & 0xf]);
+    Putc(hex[(value >> 8) & 0xf]);
+    Putc(hex[(value >> 4) & 0xf]);
+    Putc(hex[value & 0xf]);
 }
 
 static void Puts(const char* str) {
-	while (*str) {
-		Putc(*str++);
+    while (*str) {
+        Putc(*str++);
     }
 }
 
