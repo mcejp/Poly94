@@ -64,7 +64,7 @@ localparam CMD_SIZE_16BIT = 2'd1;
 localparam CMD_SIZE_32BIT = 2'd2;
 
 // keep number of top-level states to a minimum so that high-fanout expressions like 'io_write_valid_o' are simple
-enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_BURST_READ_BOOTROM, STATE_SDRAM_ACK } mem_state;
+enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_BURST_READ_BOOTROM, STATE_SDRAM_ACK, STATE_IO_READ } mem_state;
 
 wire is_io_addr =         (cpu_dBus_cmd_payload_address[27:24] == 4'h1);
 wire dBus_is_sdram_addr = (cpu_dBus_cmd_payload_address[27] == 1'b1);
@@ -197,8 +197,7 @@ always @ (posedge clk_i) begin
 
                     cpu_mem_select <= MEM_IO;
 
-                    mem_state <= STATE_FINISHED;
-                    cpu_dBus_rsp_valid <= 1;
+                    mem_state <= STATE_IO_READ;
                 end else begin
                     // ROM read (or a futile attempt to write)
                     // ROM read finishes simultaneously and so will the setting of the RDATA mux
@@ -355,6 +354,13 @@ always @ (posedge clk_i) begin
 
             mem_addr <= mem_addr + 4;
             words_remaining <= words_remaining - 1;
+        end
+
+        // This wait state is needed to break too tight write-read sequences to I/O regs.
+        // This could be solved in other ways as well.
+        STATE_IO_READ: begin
+            cpu_dBus_rsp_valid <= 1;
+            mem_state <= STATE_FINISHED;
         end
         endcase
     end
