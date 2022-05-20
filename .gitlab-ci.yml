@@ -1,17 +1,14 @@
-# TODO: bake custom image with suite
 default:
-  image: ubuntu:22.04
+  image: mcejp/poly94-buildenv:latest
 
-  before_script:
-    - apt update
-    - apt install -y bsdmainutils curl make       # bsdmainutils for 'hexdump'
-    - curl -LO https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2022-05-20/oss-cad-suite-linux-x64-20220520.tgz
-    - curl -LO https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack/releases/download/v10.2.0-1.2/xpack-riscv-none-embed-gcc-10.2.0-1.2-linux-x64.tar.gz
-    - tar xfa oss-cad-suite-linux-x64-20220520.tgz
-    - tar xfa xpack-riscv-none-embed-gcc-10.2.0-1.2-linux-x64.tar.gz
-    - export PATH=`pwd`/oss-cad-suite/bin:$PATH
-    - export PATH=`pwd`/xpack-riscv-none-embed-gcc-10.2.0-1.2/bin:$PATH
-    - echo $PATH
+  # Backup, to be used with ubuntu:20.04
+  # before_script:
+  #   - apt update
+  #   - apt install -y bsdmainutils curl make       # bsdmainutils for 'hexdump'
+  #   - curl -sL https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2022-05-20/oss-cad-suite-linux-x64-20220520.tgz | tar xz
+  #   - curl -sL https://github.com/xpack-dev-tools/riscv-none-embed-gcc-xpack/releases/download/v10.2.0-1.2/xpack-riscv-none-embed-gcc-10.2.0-1.2-linux-x64.tar.gz | tar xz
+  #   - export PATH=`pwd`/oss-cad-suite/bin:`pwd`/xpack-riscv-none-embed-gcc-10.2.0-1.2/bin:$PATH
+  #   - echo $PATH
 
 build_ulx3s:
   stage: build
