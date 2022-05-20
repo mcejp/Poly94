@@ -3,9 +3,17 @@
 #define TRACE_REG           (*(uint32_t volatile*)0x81000000)
 #define BG_COLOR            (*(uint32_t volatile*)0x81000004)
 
-#define message_sdram_x32   ((uint32_t volatile*)0x08000000)
-#define message_sdram_x16   ((uint16_t volatile*)0x08000000)
-#define sdram_x8            ((uint8_t volatile*)0x08000000)
+#define message_sdram_x32   ((uint32_t volatile*)0x08000100)
+#define message_sdram_x16   ((uint16_t volatile*)0x08000100)
+#define sdram_x8            ((uint8_t volatile*)0x08000100)
+
+struct Load_Info {
+    uint32_t* source_begin;
+    uint32_t* dest_begin;
+    uint32_t* dest_end;
+};
+
+extern struct Load_Info __text_in_sdram_regions_array_start;
 
 static const char message[] = "Hello world from SDRAM!\r\n";
 
@@ -32,7 +40,10 @@ static void Puth(uint32_t value) {
     Putc(hex[value & 0xf]);
 }
 
-static void Puts(const char* str) {
+// This function ends up in SDRAM to test that we can execution code there
+// Must NOT be static, otherwise ends up helpfully inlined
+__attribute__((section(".text_sdram")))
+void Puts(const char* str) {
     while (*str) {
         Putc(*str++);
     }
@@ -48,6 +59,11 @@ void bootldr() {
 
     for (int i = 0; i < MSG_LEN; i++) {
         sdram_x8[i] = message[i];
+    }
+
+    // Copy functions marked .text_sdram to SDRAM
+    for (int i = 0; i < __text_in_sdram_regions_array_start.dest_end - __text_in_sdram_regions_array_start.dest_begin; i++) {
+        __text_in_sdram_regions_array_start.dest_begin[i] = __text_in_sdram_regions_array_start.source_begin[i];
     }
 
     message_sdram_x32[100] = 0x12345678;

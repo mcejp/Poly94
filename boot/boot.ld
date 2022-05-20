@@ -33,6 +33,14 @@ SECTIONS
         
         __bss_regions_array_end = .;
 
+        __text_in_sdram_regions_array_start = .;
+
+        LONG(LOADADDR(.text_sdram));
+        LONG(ADDR(.text_sdram));
+        LONG(ADDR(.text_sdram)+SIZEOF(.text_sdram));
+
+        __text_in_sdram_regions_array_end = .;
+
         KEEP(*(.fini))
 
         . = ALIGN(4);
@@ -49,6 +57,15 @@ SECTIONS
 
         KEEP(*(.eh_frame*))
     } >ROM
+
+    .text_sdram : ALIGN(4)
+    {
+        __text_in_sdram_start__ = . ;
+        *(.text_sdram)
+        . = ALIGN(4);
+        __text_in_sdram__ = . ;
+
+    } >RAM AT>ROM
 
     .data : ALIGN(4)
     {
