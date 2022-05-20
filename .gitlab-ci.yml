@@ -31,8 +31,10 @@ test_cocotb:
   script:
     - make -C boot
     - make -f Makefile.coco
+    - "! grep -q '<failure' results.xml"
 
   artifacts:
     paths:
       - boot/boot.elf
       - "*.vcd"
+      - "results.xml"
