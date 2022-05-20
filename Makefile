@@ -89,7 +89,6 @@ poly94.json: poly94.ys \
 		rtl/VGA_Timing_Generator.sv \
 		rtl/vga2dvid.v \
 		rtl/ecp5/ecp5pll.sv \
-		rtl/ip/picorv32.v \
 		rtl/ip/sdram_pnru.v \
 		rtl/ip/VexRiscv.v \
 		rtl/ip/uart.sv \

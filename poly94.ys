@@ -7,7 +7,6 @@ read_verilog \
     rtl/Text_Generator.v \
     rtl/tmds_encoder.v \
     rtl/vga2dvid.v \
-    rtl/ip/picorv32.v \
     rtl/ip/sdram_pnru.v \
     rtl/ip/VexRiscv.v
 read_verilog -noassert -sv \
