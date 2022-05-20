@@ -3,9 +3,9 @@
 #define TRACE_REG           (*(uint32_t volatile*)0x81000000)
 #define BG_COLOR            (*(uint32_t volatile*)0x81000004)
 
-// only /16 and /32 addressing works at the moment
 #define message_sdram_x32   ((uint32_t volatile*)0x08000000)
 #define message_sdram_x16   ((uint16_t volatile*)0x08000000)
+#define sdram_x8            ((uint8_t volatile*)0x08000000)
 
 static const char message[] = "Hello world from SDRAM!\r\n";
 
@@ -50,7 +50,7 @@ void bootldr() {
     // TRACE_REG = '\n';
 
     for (int i = 0; i < MSG_LEN; i++) {
-        message_sdram_x16[i] = message[i];
+        sdram_x8[i] = message[i];
     }
 
     message_sdram_x32[100] = 0x12345678;
@@ -65,6 +65,6 @@ void bootldr() {
             Puts("\n\n");
         }
 
-        Putc(message_sdram_x16[i % MSG_LEN]);
+        Putc(sdram_x8[i % MSG_LEN]);
     }
 }

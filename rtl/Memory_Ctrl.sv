@@ -37,6 +37,7 @@ module Memory_Ctrl(
   output reg[23:0]  sdram_addr_x16,     // sdram address in 16-bit words (16Mw => 32MB)
   output reg[15:0]  sdram_wdata,
   output[15:0]      sdram_rdata,
+  output reg[1:0]   sdram_wmask,
 
   output[31:0]      addr_o,             // applies to Boot ROM (only?)
   input[31:0]       bootrom_data_i,
@@ -58,6 +59,7 @@ enum { MEM_BOOTROM, MEM_IO, MEM_SDRAM } cpu_mem_select;
 
 //
 
+localparam CMD_SIZE_8BIT  = 2'd0;
 localparam CMD_SIZE_16BIT = 2'd1;
 localparam CMD_SIZE_32BIT = 2'd2;
 
@@ -104,6 +106,8 @@ always @ (posedge clk_i) begin
         STATE_IDLE: begin
             waitstate_counter <= 0;
 
+            sdram_wmask <= 2'b11;
+
             // Request to start memory operation?
             // Q: should we prioritize D-requests or I-requests?
 
@@ -137,6 +141,22 @@ always @ (posedge clk_i) begin
                 sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[31:2], 1'b0};
                 sdram_wdata <= cpu_dBus_cmd_payload_data[15:0];
                 sdram_wr <= 1;
+              end else if (cpu_dBus_cmd_payload_wr && cpu_dBus_cmd_payload_size == CMD_SIZE_8BIT) begin
+                // 8-bit write. ASSUMING SDRAM.
+
+                // assert byte is repeated across halfword so we can pass it unchanged
+                assert(cpu_dBus_cmd_payload_data[15:8] == cpu_dBus_cmd_payload_data[7:0]);
+
+`ifdef VERBOSE_MEMCTL
+                $display("begin 8-bit write [%08Xh] <= %02Xh msk=%04b", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_data[7:0], cpu_dBus_cmd_payload_mask);
+`endif
+
+                mem_state <= STATE_SDRAM_WAIT;
+
+                sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[31:1]};
+                sdram_wdata <= cpu_dBus_cmd_payload_data[15:0];
+                sdram_wr <= 1;
+                sdram_wmask <= cpu_dBus_cmd_payload_mask[1:0] | cpu_dBus_cmd_payload_mask[3:2];
               end else if (cpu_dBus_cmd_payload_wr && cpu_dBus_cmd_payload_size == CMD_SIZE_16BIT) begin
                 // 16-bit write. ASSUMING SDRAM.
 

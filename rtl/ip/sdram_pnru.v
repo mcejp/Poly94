@@ -17,13 +17,14 @@ module sdram_pnru (
     input  wire [23:0] sys_ab,              // address
     input  wire [15:0] sys_di,              // data in
     output reg  [15:0] sys_do,              // data out
+    input  wire  [1:0] sys_wmask,           // byte mask
 
     // sdram interface
     output wire  [3:0] sdr_n_CS_WE_RAS_CAS, // SDRAM nCS, nWE, nRAS, nCAS
     output wire  [1:0] sdr_ba,              // SDRAM bank address
     output reg  [12:0] sdr_ab,              // SDRAM address
     inout  wire [15:0] sdr_db,              // SDRAM data
-    output reg   [1:0] sdr_dqm = 2'b11      // SDRAM DQM  
+    output reg   [1:0] sdr_dqm = 2'b11      // SDRAM DQM; note: DQM==2'b11 during init
   );
 
   // Datasheet: https://www.issi.com/WW/pdf/42-45S83200G-16160G.pdf
@@ -68,7 +69,7 @@ module sdram_pnru (
   reg [12:0] opnrow[0:3];           // open row numbers
   
   // convenience signals
-  wire        init = sdr_dqm[0];     // note: DQM==2'b11 during init, 2b'00 thereafter
+  reg         init = 1'b1;
   wire  [8:0] col  = ab[8:0];
   wire [12:0] row  = ab[23:11];
   wire  [2:0] ba   = ab[10:9];
@@ -95,8 +96,10 @@ module sdram_pnru (
               else begin
                 sys_rdy <= 1'b0;
                 if (ctr>=RFTIME) state <= RFRSH1;         // as needed, refresh a row
-                else if (rd|wr)  state <= RDWR;           // else respond to rd or wr request
-                else begin
+                else if (rd|wr) begin
+                  state <= RDWR;           // else respond to rd or wr request
+                  sdr_dqm <= ~sys_wmask;
+                end else begin
                   sys_rdy <= 1'b1;
                   state <= IDLE;                                 // else do nothing
                 end
@@ -111,7 +114,7 @@ module sdram_pnru (
 
       RFRSH2: begin // refresh one row, then return to IDLE
                 sdr_cmd <= AUTORFRSH;
-                sdr_dqm <= 2'b00;     // end init
+                init <= 1'b0;
                 ctr     <= 0;         // reset timeout
                 dly <= tRC-2; next <= (init) ? RFRSH2 : IDLE;  // repeat AUTORFRSH during init
               end

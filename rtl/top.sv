@@ -58,6 +58,7 @@ module top
     wire[15:0]  sdram_rdata;
     wire        sdram_ack;
     wire        sdram_rdy;
+    wire[1:0]   sdram_wmask;
 
     wire[31:0]  mem_addr;                // TODO: trim down useless bits?
     wire        mem_io_write_valid;
@@ -236,6 +237,7 @@ module top
         .sys_do(sdram_rdata),
         .sys_ack(sdram_ack),
         .sys_rdy(sdram_rdy),
+        .sys_wmask(sdram_wmask),
 
         .sdr_ab(sdram_a),
         .sdr_db(sdram_d),
@@ -296,6 +298,7 @@ module top
       .sdram_addr_x16,
       .sdram_wdata,
       .sdram_rdata,
+      .sdram_wmask,
 
       .addr_o(mem_addr),
       .bootrom_data_i(bootrom_data),
