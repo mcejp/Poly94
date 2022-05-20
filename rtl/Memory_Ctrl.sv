@@ -5,6 +5,8 @@
 //
 // indent: 2sp
 
+// `define VERBOSE_MEMCTL
+
 module Memory_Ctrl(
   input             clk_i,
   input             rst_i,
@@ -125,7 +127,9 @@ always @ (posedge clk_i) begin
               if (cpu_dBus_cmd_payload_wr && cpu_dBus_cmd_payload_size == CMD_SIZE_32BIT) begin
                 // 32-bit write. ASSUMING SDRAM.
 
+`ifdef VERBOSE_MEMCTL
                 $display("begin 32-bit write [%08Xh] <= %08Xh sz=%d", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_data, cpu_dBus_cmd_payload_size);
+`endif
 
                 mem_state <= STATE_SDRAM_WAIT;
 
@@ -136,7 +140,9 @@ always @ (posedge clk_i) begin
               end else if (cpu_dBus_cmd_payload_wr && cpu_dBus_cmd_payload_size == CMD_SIZE_16BIT) begin
                 // 16-bit write. ASSUMING SDRAM.
 
+`ifdef VERBOSE_MEMCTL
                 $display("begin 16-bit write [%08Xh] <= %04Xh", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_data[15:0]);
+`endif
 
                 mem_state <= STATE_SDRAM_WAIT;
 
@@ -152,7 +158,9 @@ always @ (posedge clk_i) begin
 
                 // 32-bit read. Can be BootROM or SDRAM
                 if (is_sdram_addr) begin
+`ifdef VERBOSE_MEMCTL
                     $display("begin 32-bit read [%08Xh] msk=%04b sz=%d", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
+`endif
 
                     // low halfword first
                     sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[31:2], 1'b0};
@@ -161,7 +169,9 @@ always @ (posedge clk_i) begin
                     cpu_mem_select <= MEM_SDRAM;
                     mem_state <= STATE_SDRAM_WAIT;
                 end else if (is_io_addr && cpu_dBus_cmd_payload_size == CMD_SIZE_32BIT) begin
+`ifdef VERBOSE_MEMCTL
                     $display("begin IO read [%08Xh] msk=%04b sz=%d", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
+`endif
 
                     cpu_mem_select <= MEM_IO;
 
@@ -170,7 +180,9 @@ always @ (posedge clk_i) begin
                 end else begin
                     // ROM read (or a futile attempt to write)
                     // ROM read finishes simultaneously and so will the setting of the RDATA mux
+`ifdef VERBOSE_MEMCTL
                     $display("begin ROM read [%08Xh] msk=%04b sz=%d", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
+`endif
 
                     cpu_mem_select <= MEM_BOOTROM;
                     mem_state <= STATE_BURST_READ_BOOTROM;
@@ -185,7 +197,9 @@ always @ (posedge clk_i) begin
                 // Instruction bus read. Always a series of 32-bit words. ASSUMING BOOTROM.
                 // There is no 'last' signal; we have to look at 'size' (which is log2(bytes_to_read)) and loop
 
+`ifdef VERBOSE_MEMCTL
                 $display("begin 32-bit burst ROM read via I-bus [%08Xh]", cpu_iBus_cmd_payload_address);
+`endif
 
                 words_remaining <= (1 << (cpu_iBus_cmd_payload_size - 2)) - 1;
 
@@ -262,7 +276,9 @@ always @ (posedge clk_i) begin
 
                         cpu_dBus_rsp_valid <= 1;
 
+`ifdef VERBOSE_MEMCTL
                         $display("  finished 32-bit SDRAM read [%08X] => %08X", mem_addr, {sdram_rdata, cpu_sdram_rdata[15:0]});
+`endif
 
                         if (words_remaining == 0) begin
                             mem_state <= STATE_FINISHED;
@@ -320,7 +336,9 @@ always @ (posedge clk_i) begin
     end
 
     if (reading_bootrom) begin
+`ifdef VERBOSE_MEMCTL
       $display("  ROM read => %08X", bootrom_data_i);
+`endif
     end
 end
 
