@@ -49,6 +49,12 @@ void Puts(const char* str) {
     }
 }
 
+static uint32_t rdcyclel() {
+    uint32_t val;
+    __asm__ volatile ("rdcycle %0" : "=r" (val));
+    return val;
+}
+
 void bootldr() {
     // TRACE_REG = 'H';
     // TRACE_REG = 'e';
@@ -70,14 +76,17 @@ void bootldr() {
 
     BG_COLOR = 0xffff00;
 
-    for (int i = 0; ; i++) {
-        BG_COLOR = (i & 0xff00);
+    for (;;) {
+        Puth(message_sdram_x32[100]);
+        Puts("\n\n");
 
-        if ((i % MSG_LEN) == 0) {
-            Puth(message_sdram_x32[100]);
-            Puts("\n\n");
+        for (int i = 0; i < MSG_LEN; i++) {
+            BG_COLOR = (i & 0xff00);
+
+            Putc(sdram_x8[i % MSG_LEN]);
         }
 
-        Putc(sdram_x8[i % MSG_LEN]);
+        Puth(rdcyclel());
+        Puts(" cycles\n");
     }
 }

@@ -879,10 +879,16 @@ module VexRiscv (
   reg                 execute_CsrPlugin_csr_772;
   wire                when_CsrPlugin_l1268_3;
   reg                 execute_CsrPlugin_csr_834;
+  wire                when_CsrPlugin_l1268_4;
+  reg                 execute_CsrPlugin_csr_3072;
+  wire                when_CsrPlugin_l1268_5;
+  reg                 execute_CsrPlugin_csr_3200;
   reg        [31:0]   _zz_CsrPlugin_csrMapping_readDataInit;
   reg        [31:0]   _zz_CsrPlugin_csrMapping_readDataInit_1;
   reg        [31:0]   _zz_CsrPlugin_csrMapping_readDataInit_2;
   reg        [31:0]   _zz_CsrPlugin_csrMapping_readDataInit_3;
+  reg        [31:0]   _zz_CsrPlugin_csrMapping_readDataInit_4;
+  reg        [31:0]   _zz_CsrPlugin_csrMapping_readDataInit_5;
   wire                when_CsrPlugin_l1301;
   wire                when_CsrPlugin_l1306;
   `ifndef SYNTHESIS
@@ -2723,6 +2729,16 @@ module VexRiscv (
         execute_CsrPlugin_illegalAccess = 1'b0;
       end
     end
+    if(execute_CsrPlugin_csr_3072) begin
+      if(execute_CSR_READ_OPCODE) begin
+        execute_CsrPlugin_illegalAccess = 1'b0;
+      end
+    end
+    if(execute_CsrPlugin_csr_3200) begin
+      if(execute_CSR_READ_OPCODE) begin
+        execute_CsrPlugin_illegalAccess = 1'b0;
+      end
+    end
     if(CsrPlugin_csrMapping_allowCsrSignal) begin
       execute_CsrPlugin_illegalAccess = 1'b0;
     end
@@ -3259,6 +3275,8 @@ module VexRiscv (
   assign when_CsrPlugin_l1268_1 = (! execute_arbitration_isStuck);
   assign when_CsrPlugin_l1268_2 = (! execute_arbitration_isStuck);
   assign when_CsrPlugin_l1268_3 = (! execute_arbitration_isStuck);
+  assign when_CsrPlugin_l1268_4 = (! execute_arbitration_isStuck);
+  assign when_CsrPlugin_l1268_5 = (! execute_arbitration_isStuck);
   always @(*) begin
     _zz_CsrPlugin_csrMapping_readDataInit = 32'h0;
     if(execute_CsrPlugin_csr_768) begin
@@ -3294,7 +3312,21 @@ module VexRiscv (
     end
   end
 
-  assign CsrPlugin_csrMapping_readDataInit = ((_zz_CsrPlugin_csrMapping_readDataInit | _zz_CsrPlugin_csrMapping_readDataInit_1) | (_zz_CsrPlugin_csrMapping_readDataInit_2 | _zz_CsrPlugin_csrMapping_readDataInit_3));
+  always @(*) begin
+    _zz_CsrPlugin_csrMapping_readDataInit_4 = 32'h0;
+    if(execute_CsrPlugin_csr_3072) begin
+      _zz_CsrPlugin_csrMapping_readDataInit_4[31 : 0] = CsrPlugin_mcycle[31 : 0];
+    end
+  end
+
+  always @(*) begin
+    _zz_CsrPlugin_csrMapping_readDataInit_5 = 32'h0;
+    if(execute_CsrPlugin_csr_3200) begin
+      _zz_CsrPlugin_csrMapping_readDataInit_5[31 : 0] = CsrPlugin_mcycle[63 : 32];
+    end
+  end
+
+  assign CsrPlugin_csrMapping_readDataInit = (((_zz_CsrPlugin_csrMapping_readDataInit | _zz_CsrPlugin_csrMapping_readDataInit_1) | (_zz_CsrPlugin_csrMapping_readDataInit_2 | _zz_CsrPlugin_csrMapping_readDataInit_3)) | (_zz_CsrPlugin_csrMapping_readDataInit_4 | _zz_CsrPlugin_csrMapping_readDataInit_5));
   assign when_CsrPlugin_l1301 = (CsrPlugin_privilege < execute_CsrPlugin_csrAddress[9 : 8]);
   assign when_CsrPlugin_l1306 = ((! execute_arbitration_isValid) || (! execute_IS_CSR));
   always @(posedge clk or posedge reset) begin
@@ -3726,6 +3758,12 @@ module VexRiscv (
     end
     if(when_CsrPlugin_l1268_3) begin
       execute_CsrPlugin_csr_834 <= (decode_INSTRUCTION[31 : 20] == 12'h342);
+    end
+    if(when_CsrPlugin_l1268_4) begin
+      execute_CsrPlugin_csr_3072 <= (decode_INSTRUCTION[31 : 20] == 12'hc00);
+    end
+    if(when_CsrPlugin_l1268_5) begin
+      execute_CsrPlugin_csr_3200 <= (decode_INSTRUCTION[31 : 20] == 12'hc80);
     end
     if(execute_CsrPlugin_csr_836) begin
       if(execute_CsrPlugin_writeEnable) begin

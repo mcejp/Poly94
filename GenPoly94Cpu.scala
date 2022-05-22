@@ -46,7 +46,27 @@ object GenPoly94Cpu extends App{
           //ioRange      = _(31 downto 28) === 0xF
           ioRange      = _(31 downto 31) === 1
         ),
-        new CsrPlugin(CsrPluginConfig.smallest),
+        new CsrPlugin(CsrPluginConfig(
+          catchIllegalAccess = false,
+          mvendorid      = null,
+          marchid        = null,
+          mimpid         = null,
+          mhartid        = null,
+          misaExtensionsInit = 66,
+          misaAccess     = CsrAccess.NONE,
+          mtvecAccess    = CsrAccess.NONE,
+          mtvecInit      = 0x00000020l,
+          mepcAccess     = CsrAccess.NONE,
+          mscratchGen    = false,
+          mcauseAccess   = CsrAccess.READ_ONLY,
+          mbadaddrAccess = CsrAccess.NONE,
+          mcycleAccess   = CsrAccess.NONE,
+          minstretAccess = CsrAccess.NONE,
+          ecallGen       = false,
+          wfiGenAsWait   = false,
+          ucycleAccess   = CsrAccess.READ_ONLY,
+          uinstretAccess = CsrAccess.NONE
+        )),
         new DecoderSimplePlugin(
           catchIllegalInstruction = false
         ),
