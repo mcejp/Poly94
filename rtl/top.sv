@@ -23,6 +23,8 @@ module top
 );
     // assign wifi_gpio0 = 1'b1;
 
+    parameter CLK_SYS_HZ = 25_000_000;
+
     // begin PLL
 `ifndef SYNTHESIS
     wire clk_sys = clk_25mhz;
@@ -32,9 +34,9 @@ module top
     wire [3:0] clocks;
     ecp5pll
     #(
-        .in_hz(  25_000_000),
-        .out0_hz(25_000_000),
-        .out1_hz(25_000_000), .out1_deg(90) // phase shifted for SDRAM chip
+        .in_hz(  CLK_SYS_HZ),
+        .out0_hz(CLK_SYS_HZ),
+        .out1_hz(CLK_SYS_HZ), .out1_deg(90) // phase shifted for SDRAM chip
     )
     ecp5pll_inst
     (
@@ -146,9 +148,9 @@ module top
     wire[31:0] bootrom_data;
     reg[31:0] mem_io_rdata;
 
-    reg uart_wr_strobe;
-    reg[7:0] uart_data;
-    wire uart_busy;
+    reg uart_tx_strobe;
+    reg[7:0] uart_tx_data;
+    wire uart_tx_busy;
 
     reg reset_n = 1'b0;
     logic[7:0] reset_cnt = 0;
@@ -249,21 +251,34 @@ module top
 `ifdef SYNTHESIS
     parameter UART_BAUDRATE = 115_200;
 `else
-    parameter UART_BAUDRATE = 12_500_000;
+    parameter UART_BAUDRATE = 0;
 `endif
 
-    uart #(
-        .CLK_FREQ_HZ(25_000_000),
-        .BAUDRATE(UART_BAUDRATE)
-    ) uart_inst(
-        .clk_i(clk_sys),
-        .rst_i(~reset_n),
+    uart uart_inst(
+        .clk(clk_sys),
+        .rst(~reset_n),
 
-        .uart_wr_strobe_i(uart_wr_strobe),
-        .uart_data_i(uart_data),
+        // AXI input
+        .s_axis_tdata(uart_tx_data),
+        .s_axis_tvalid(uart_tx_strobe),
+        //.s_axis_tready,   unclear how this differs from ~busy
 
-        .uart_busy_o(uart_busy),
-        .uart_tx_o(ftdi_rxd)
+        // AXI output
+        // output wire [DATA_WIDTH-1:0]  m_axis_tdata,
+        // output wire                   m_axis_tvalid,
+        .m_axis_tready(1'b0),
+
+        // UART interface
+        .rxd(1'b1),
+        .txd(ftdi_rxd),
+    
+        // Status
+        .tx_busy(uart_tx_busy),
+        // output wire                   rx_busy,
+        // output wire                   rx_overrun_error,
+        // output wire                   rx_frame_error,
+
+        .prescale(UART_BAUDRATE > 0 ? CLK_SYS_HZ / UART_BAUDRATE / 8 : 1)
     );
 
     // reg[7:0] col_data;
@@ -312,7 +327,7 @@ module top
     // System control
 
     always @ (posedge clk_sys) begin
-        uart_wr_strobe <= 1'b0;
+        uart_tx_strobe <= 1'b0;
 
         if (!reset_n) begin
             bg_col <= 0;
@@ -321,8 +336,8 @@ module top
             if (mem_io_write_valid && mem_io_addr[11:0] == 12'h000) begin
                 // $display("WRITE CHAR '%c'", mem_io_wdata[7:0]);
 
-                uart_wr_strobe <= 1;
-                uart_data <= mem_io_wdata[7:0];
+                uart_tx_strobe <= 1;
+                uart_tx_data <= mem_io_wdata[7:0];
             end
 
             // write BG_COLOR
@@ -335,7 +350,7 @@ module top
             end
 
             //
-            mem_io_rdata = {31'h00000000, uart_busy};
+            mem_io_rdata = {31'h00000000, uart_tx_busy};
         end
     end
 
@@ -347,5 +362,5 @@ module top
     // assign led[5] = is_valid_io_write;
     // assign led[6] = (mem_state != STATE_SDRAM_WAIT);
     // assign led[7] = (mem_state == STATE_SDRAM_WAIT);
-    assign led = uart_data;
+    assign led = uart_tx_data;
 endmodule

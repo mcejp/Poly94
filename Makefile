@@ -76,6 +76,9 @@ boot/boot_syn.vh:
 	ecpbram --generate boot/boot_syn.vh --width 32 --depth 1024 --seed 0
 
 poly94.json: poly94.ys \
+		lib/verilog-uart/rtl/uart_rx.v \
+		lib/verilog-uart/rtl/uart_tx.v \
+		lib/verilog-uart/rtl/uart.v \
 		rtl/clk_25_250_125_25.v \
 		rtl/CPU_Rom.sv \
 		rtl/fake_differential.v \
@@ -99,6 +102,6 @@ prog: ulx3s.bit
 	fujprog ulx3s.bit
 
 sim:
-	verilator --top-module top -Irtl -Irtl/ip -Wno-fatal --cc --exe --trace sim/sim_main.cpp rtl/top.sv
+	verilator --top-module top -Ilib/verilog-uart/rtl -Irtl -Irtl/ip -Wno-fatal --cc --exe --trace sim/sim_main.cpp rtl/top.sv
 	$(MAKE) -C obj_dir -f Vtop.mk -j
 	obj_dir/Vtop

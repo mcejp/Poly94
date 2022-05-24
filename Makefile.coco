@@ -5,7 +5,11 @@ SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 COMPILE_ARGS = -grelative-include
 
-VERILOG_SOURCES += rtl/clk_25_250_125_25.v \
+VERILOG_SOURCES += \
+		lib/verilog-uart/rtl/uart_rx.v \
+		lib/verilog-uart/rtl/uart_tx.v \
+		lib/verilog-uart/rtl/uart.v \
+		rtl/clk_25_250_125_25.v \
 		rtl/CPU_Rom.sv \
 		rtl/Memory_Ctrl.sv \
 		rtl/pll.v \
@@ -16,7 +20,6 @@ VERILOG_SOURCES += rtl/clk_25_250_125_25.v \
 		rtl/VGA_Timing_Generator.sv \
 		rtl/ip/sdram_pnru.v \
 		rtl/ip/VexRiscv.v \
-		rtl/ip/uart.sv \
 		rtl/model/mt48lc16m16a2.v \
 		rtl/sim/top_sim.sv
 

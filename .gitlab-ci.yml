@@ -10,6 +10,9 @@ default:
   #   - export PATH=`pwd`/oss-cad-suite/bin:`pwd`/xpack-riscv-none-embed-gcc-10.2.0-1.2/bin:$PATH
   #   - echo $PATH
 
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
 build_ulx3s:
   stage: build
   needs: []
