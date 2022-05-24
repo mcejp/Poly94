@@ -19,7 +19,8 @@ module top
     output [1:0] sdram_dqm, // byte select
     inout [15:0] sdram_d,   // data bus to/from SDRAM
 
-    output ftdi_rxd
+    output ftdi_rxd,
+    input ftdi_txd
 );
     // assign wifi_gpio0 = 1'b1;
 
@@ -63,6 +64,7 @@ module top
     wire[1:0]   sdram_wmask;
 
     wire[31:0]  mem_addr;                // TODO: trim down useless bits?
+    wire        mem_io_read_valid;
     wire        mem_io_write_valid;
     wire[31:0]  mem_io_addr;
     wire[31:0]  mem_io_wdata;
@@ -148,6 +150,9 @@ module top
     wire[31:0] bootrom_data;
     reg[31:0] mem_io_rdata;
 
+    reg uart_rx_strobe;
+    wire[7:0] uart_rx_data;
+    wire uart_rx_valid;
     reg uart_tx_strobe;
     reg[7:0] uart_tx_data;
     wire uart_tx_busy;
@@ -264,12 +269,12 @@ module top
         //.s_axis_tready,   unclear how this differs from ~busy
 
         // AXI output
-        // output wire [DATA_WIDTH-1:0]  m_axis_tdata,
-        // output wire                   m_axis_tvalid,
-        .m_axis_tready(1'b0),
+        .m_axis_tdata(uart_rx_data),
+        .m_axis_tvalid(uart_rx_valid),
+        .m_axis_tready(uart_rx_strobe),
 
         // UART interface
-        .rxd(1'b1),
+        .rxd(ftdi_txd),
         .txd(ftdi_rxd),
     
         // Status
@@ -318,6 +323,7 @@ module top
       .addr_o(mem_addr),
       .bootrom_data_i(bootrom_data),
 
+      .io_read_valid_o(mem_io_read_valid),
       .io_write_valid_o(mem_io_write_valid),
       .io_addr_o(mem_io_addr),
       .io_rdata_i(mem_io_rdata),
@@ -349,8 +355,22 @@ module top
                 end
             end
 
+            // read UART_DATA
+            if (mem_io_read_valid && mem_io_addr[11:0] == 12'h008) begin
+                $display("READ UART RX");
+                uart_rx_strobe <= 1'b1;
+            end else begin
+                uart_rx_strobe <= 1'b0;
+            end
+
             //
-            mem_io_rdata = {31'h00000000, uart_tx_busy};
+            if (mem_io_addr[11:0] == 12'h000) begin
+                mem_io_rdata <= {30'h00000000, uart_rx_valid, uart_tx_busy};
+            end else if (mem_io_addr[11:0] == 12'h008) begin
+                mem_io_rdata <= {24'h0, uart_rx_data};
+            end else begin
+                mem_io_rdata <= 32'hxxxxxxxx;
+            end
         end
     end
 

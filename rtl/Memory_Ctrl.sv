@@ -44,6 +44,7 @@ module Memory_Ctrl(
 
   // these change in 0 cycles from the CPU request
   // (probably unnecessary & should be pipelined & folded into addr_o)
+  output            io_read_valid_o,
   output            io_write_valid_o,
   output[31:0]      io_addr_o,
   input[31:0]       io_rdata_i,
@@ -68,6 +69,7 @@ enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_BURST_READ_BOOTROM, S
 
 wire is_io_addr =         (cpu_dBus_cmd_payload_address[27:24] == 4'h1);
 wire dBus_is_sdram_addr = (cpu_dBus_cmd_payload_address[27] == 1'b1);
+assign io_read_valid_o = (mem_state == STATE_IDLE && cpu_dBus_cmd_valid && is_io_addr && !cpu_dBus_cmd_payload_wr);
 wire iBus_is_sdram_addr = (cpu_iBus_cmd_payload_address[27] == 1'b1);
 assign io_write_valid_o = (mem_state == STATE_IDLE && cpu_dBus_cmd_valid && is_io_addr && cpu_dBus_cmd_payload_wr);
 

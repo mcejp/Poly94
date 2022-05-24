@@ -2,6 +2,10 @@
 
 #define TRACE_REG           (*(uint32_t volatile*)0x81000000)
 #define BG_COLOR            (*(uint32_t volatile*)0x81000004)
+#define UART_DATA           (*(uint32_t volatile*)0x81000008)
+
+#define UART_TX_BUSY        1
+#define UART_RX_NOT_EMPTY   2
 
 #define message_sdram_x32   ((uint32_t volatile*)0x08000100)
 #define message_sdram_x16   ((uint16_t volatile*)0x08000100)
@@ -21,7 +25,7 @@ static const char message[] = "Hello world from SDRAM!\r\n";
 
 static void Putc(char c) {
     // wait while UART busy
-    while (TRACE_REG & 1) {
+    while (TRACE_REG & UART_TX_BUSY) {
     }
 
     TRACE_REG = c;
@@ -88,5 +92,19 @@ void bootldr() {
 
         Puth(rdcyclel());
         Puts(" cycles\n");
+
+        break;
+    }
+
+    for (;;) {
+        if (TRACE_REG & UART_RX_NOT_EMPTY) {
+            int data_in = UART_DATA;
+            if (data_in == '\n') {
+                Puts("\n> ");
+            }
+            else {
+                Putc(data_in);
+            }
+        }
     }
 }

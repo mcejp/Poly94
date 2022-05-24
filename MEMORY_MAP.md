@@ -40,10 +40,15 @@ CPU external address bus is effectively 28 bits wide.
 
 0x0100_0000  TRACE_REG
   - write to send on UART (8 bits)
-  - read to see if UART busy (1) or idle (0)
+  - read to see:
+    - if UART busy (1) or idle (0)
+    - Rx data ready (2) or no data
 
 0x0100_0004  BG_COLOR
   - write to set background color (24-bit)
+
+0x0100_0008  UART_DATA
+  - read to get byte from UART Rx buffer
 
 
 ---
