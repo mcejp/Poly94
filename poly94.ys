@@ -17,7 +17,6 @@ read_verilog -noassert -sv \
     rtl/Memory_Ctrl.sv \
     rtl/top.sv \
     rtl/VGA_Timing_Generator.sv \
-    rtl/ecp5/ecp5pll.sv \
-    rtl/ip/uart.sv
+    rtl/ecp5/ecp5pll.sv
 hierarchy -top top
 synth_ecp5 -json poly94.json
