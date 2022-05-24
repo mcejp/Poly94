@@ -76,10 +76,10 @@ module sdram_pnru (
   
   // SDRAM command codes
   localparam NOP  = 4'b1000, PRECHRG = 4'b0001, AUTORFRSH = 4'b0100, MODESET = 4'b0000,
-             READ = 4'b0110, WRITE   = 4'b0010, ACTIVATE  = 4'b0101;
+             READ = 4'b0110, WRITE   = 4'b0010, ACTIVATE  = 4'b0101, BURST_STOP = 4'b0011;
 
-  // SDRAM mode register: single word reads & writes, CL=3, sequential access
-  localparam MODE = 13'b000_1_00_011_0_000;
+  // SDRAM mode register: single word reads & writes, CL=3, sequential access, full page burst
+  localparam MODE = 13'b000_1_00_011_0_111;
   
   always @(posedge sys_clk)
   begin
@@ -150,6 +150,7 @@ module sdram_pnru (
       RWRDY:  begin // latch read result, or write data
                 sys_rdy <= 1'b1;
                 if (rd) sys_do  <= sdr_db;
+                if (wr) sdr_cmd <= BURST_STOP;
                 state <= ACKWT;
               end
               
@@ -157,7 +158,11 @@ module sdram_pnru (
               state <= (ack) ? IDLE : ACKWT;
       
       WAIT:   // wait 'dly' clocks before progressing to state 'next'   
-              state <= (|dly) ? WAIT : next;
+              begin
+                state <= (|dly) ? WAIT : next;
+                if (next == RWRDY && dly == CL - 1)
+                  sdr_cmd <= BURST_STOP;
+              end
               
     endcase
   end
