@@ -69,8 +69,8 @@ module top
     wire[31:0]  mem_io_addr;
     wire[31:0]  mem_io_wdata;
 
-    // TODO: can we use some SystemVerilog structure for this?
     wire VGA_Timing timing0;
+    wire VGA_Timing timing1;
     wire hsync_n1, vsync_n1, blank_n1, end_of_line1, end_of_frame1;
     wire hsync_n2, vsync_n2, blank_n2, end_of_line2, end_of_frame2;
 
@@ -101,32 +101,49 @@ module top
         .rgb_o(color1)
     );
 
-    Text_Generator tg(
-        .clk_i(clk_sys),
-        .rst_i(1'b0),
+    // Text_Generator tg(
+    //     .clk_i(clk_sys),
+    //     .rst_i(1'b0),
 
-        .end_of_frame_i(end_of_frame1),
-        .end_of_line_i(end_of_line1),
-        .hsync_n_i(hsync_n1),
-        .vsync_n_i(vsync_n1),
-        .visible_i(blank_n1),
+    //     .end_of_frame_i(end_of_frame1),
+    //     .end_of_line_i(end_of_line1),
+    //     .hsync_n_i(hsync_n1),
+    //     .vsync_n_i(vsync_n1),
+    //     .visible_i(blank_n1),
 
-        .bg_rgb_i(bg_col),
-        .fg_rgb_i(~color1),//24'hffffff),
+    //     .bg_rgb_i(bg_col),
+    //     .fg_rgb_i(~color1),//24'hffffff),
 
-        .visible_o(blank_n2),
-        .end_of_frame_o(end_of_frame2),
-        .end_of_line_o(end_of_line2),
-        .hsync_n_o(hsync_n2),
-        .vsync_n_o(vsync_n2),
+    //     .visible_o(blank_n2),
+    //     .end_of_frame_o(end_of_frame2),
+    //     .end_of_line_o(end_of_line2),
+    //     .hsync_n_o(hsync_n2),
+    //     .vsync_n_o(vsync_n2),
 
-        .rgb_o(color2),
+    //     .rgb_o(color2),
 
-        // Memory interface
-        // addr_o,         // address in 16-bit words
-        // rd_strobe_o,    // read strobe: we expect the data exactly 3 cycles after signalling this
+    //     // Memory interface
+    //     // addr_o,         // address in 16-bit words
+    //     // rd_strobe_o,    // read strobe: we expect the data exactly 3 cycles after signalling this
 
-        .data_i(8'd32)
+    //     .data_i(8'd32)
+    // );
+
+    Video_Ctrl video_inst(
+      .clk_i(clk_sys),
+      .rst_i(~reset_n),
+
+      // // SDRAM
+      // output reg        sdram_rd,           // not strobe -- keep up until ACK (TODO verify)
+      // input             sdram_rdy,
+      // output reg        sdram_ack,
+      // output reg[23:0]  sdram_addr_x16,     // sdram address in 16-bit words (16Mw => 32MB)
+      // input[15:0]       sdram_rdata,
+
+      .timing_i(timing0),
+      .timing_o(timing1),
+
+      .rgb_o(color2)
     );
 
 `ifdef SYNTHESIS
@@ -134,9 +151,9 @@ module top
     (
         .clk_25mhz(clk_sys),
 
-        .hsync_n_i(hsync_n2),
-        .vsync_n_i(vsync_n2),
-        .blank_n_i(blank_n2),
+        .hsync_n_i(timing1.hsync_n),
+        .vsync_n_i(timing1.vsync_n),
+        .blank_n_i(timing1.blank_n),
 
         .color_i(color2),
 
