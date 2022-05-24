@@ -23,6 +23,13 @@ static const char message[] = "Hello world from SDRAM!\r\n";
 
 #define MSG_LEN (sizeof(message) - 1)
 
+static int Getc(void) {
+    while (!(TRACE_REG & UART_RX_NOT_EMPTY)) {
+    }
+
+    return UART_DATA;
+}
+
 static void Putc(char c) {
     // wait while UART busy
     while (TRACE_REG & UART_TX_BUSY) {
@@ -57,6 +64,26 @@ static uint32_t rdcyclel() {
     uint32_t val;
     __asm__ volatile ("rdcycle %0" : "=r" (val));
     return val;
+}
+
+void UART_Echo(void) {
+    Puts("\n> ");
+
+    for (;;) {
+        int data_in = Getc();
+
+        if (data_in == 0x04) {
+            // Ctrl-D
+            Putc('\n');
+            return;
+        }
+        else if (data_in == '\n') {
+            Puts("\n> ");
+        }
+        else {
+            Putc(data_in);
+        }
+    }
 }
 
 void bootldr() {
@@ -96,15 +123,40 @@ void bootldr() {
         break;
     }
 
+    void* INIT_ADDR = (void*)0x08000000;      // this kills code that we put in SDRAM!
+    uint8_t* addr = (uint8_t*) INIT_ADDR;
+
     for (;;) {
-        if (TRACE_REG & UART_RX_NOT_EMPTY) {
-            int data_in = UART_DATA;
-            if (data_in == '\n') {
-                Puts("\n> ");
+        char c = Getc();
+        const int BS = 1024;
+
+        if (c == '\n') {
+            UART_Echo();
+        }
+        else if (c == '\xAA') {
+            Putc('a');
+            addr = (uint8_t*) INIT_ADDR;
+        }
+        else if (c == '\xAD') {
+            for (int i = 0; i < BS; i++) {
+                *addr = Getc();
+                addr++;
             }
-            else {
-                Putc(data_in);
+
+            Putc('d');
+        }
+        else if (c == '\xAE') {
+            Putc('e');
+
+            // flush all caches
+            __asm__ volatile ("fence");
+            __asm__ volatile ("fence.i");
+
+            // wait while UART busy
+            while (TRACE_REG & UART_TX_BUSY) {
             }
+
+            ((void (*)())(INIT_ADDR))();
         }
     }
 }
