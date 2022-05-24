@@ -14,7 +14,7 @@ object GenPoly94Cpu extends App{
       plugins = List(
         new IBusCachedPlugin(
           //prediction = STATIC,
-          resetVector = 0x07000000l,
+          resetVector = 0x03000000l,
           config = InstructionCacheConfig(
             cacheSize = 4096,
             bytePerLine = 32,

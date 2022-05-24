@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+#define SDRAM_START         0x04000000
+
 #define TRACE_REG           (*(uint32_t volatile*)0x81000000)
 #define BG_COLOR            (*(uint32_t volatile*)0x81000004)
 #define UART_DATA           (*(uint32_t volatile*)0x81000008)
@@ -7,9 +9,9 @@
 #define UART_TX_BUSY        1
 #define UART_RX_NOT_EMPTY   2
 
-#define message_sdram_x32   ((uint32_t volatile*)0x08000100)
-#define message_sdram_x16   ((uint16_t volatile*)0x08000100)
-#define sdram_x8            ((uint8_t volatile*)0x08000100)
+#define message_sdram_x32   ((uint32_t volatile*)0x04000100)
+#define message_sdram_x16   ((uint16_t volatile*)0x04000100)
+#define sdram_x8            ((uint8_t  volatile*)0x04000100)
 
 struct Load_Info {
     uint32_t* source_begin;
@@ -123,7 +125,7 @@ void bootldr() {
         break;
     }
 
-    void* INIT_ADDR = (void*)0x08000000;      // this kills code that we put in SDRAM!
+    void* INIT_ADDR = (void*) SDRAM_START;      // this kills code that we put in SDRAM!
     uint8_t* addr = (uint8_t*) INIT_ADDR;
 
     for (;;) {
