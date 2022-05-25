@@ -18,6 +18,7 @@ module sdram_pnru (
     input  wire [15:0] sys_di,              // data in
     output reg  [15:0] sys_do,              // data out
     input  wire  [1:0] sys_wmask,           // byte mask
+    input              burst_i,
 
     // sdram interface
     output wire  [3:0] sdr_n_CS_WE_RAS_CAS, // SDRAM nCS, nWE, nRAS, nCAS
@@ -67,6 +68,8 @@ module sdram_pnru (
   reg  [6:0] dly;                   // FSM delay counter
   reg  [3:0] open;                  // open bank flags
   reg [12:0] opnrow[0:3];           // open row numbers
+  reg bursting;
+  reg  [7:0] burst_count;
   
   // convenience signals
   reg         init = 1'b1;
@@ -99,10 +102,12 @@ module sdram_pnru (
                 else if (rd|wr) begin
                   state <= RDWR;           // else respond to rd or wr request
                   sdr_dqm <= ~sys_wmask;
+                  bursting <= burst_i;
                 end else begin
                   sys_rdy <= 1'b1;
                   state <= IDLE;                                 // else do nothing
                 end
+                burst_count <= 0;
               end
 
       RFRSH1: begin // prior to refresh, close all banks
@@ -151,7 +156,23 @@ module sdram_pnru (
                 sys_rdy <= 1'b1;
                 if (rd) sys_do  <= sdr_db;
                 if (wr) sdr_cmd <= BURST_STOP;
-                state <= ACKWT;
+                if (bursting) begin
+                  $display("SDRAM burst cnt %d, put out data, stop=%d", burst_count, (burst_count == 64 - CL));
+                  if (burst_count == 64 - CL) begin    // might be off by 1 or 2
+                    sdr_cmd <= BURST_STOP;
+                  end
+
+                  if (burst_count < 63) begin
+                    state <= RWRDY;
+                  end else begin
+                    $display("SDRAM burst finish, this is the last word");
+                    state <= ACKWT;
+                  end
+                end else begin
+                  state <= ACKWT;
+                end
+
+                burst_count <= burst_count + 1'b1;
               end
               
       ACKWT:  // wait for system to end current r/w cycle
@@ -160,7 +181,7 @@ module sdram_pnru (
       WAIT:   // wait 'dly' clocks before progressing to state 'next'   
               begin
                 state <= (|dly) ? WAIT : next;
-                if (next == RWRDY && dly == CL - 1)
+                if (next == RWRDY && dly == CL - 1 && !bursting)
                   sdr_cmd <= BURST_STOP;
               end
               

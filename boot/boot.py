@@ -49,6 +49,7 @@ with serial.Serial(PORT, BAUD) as ser, open(FILE, "rb") as f:
     ser.write(b"\xAE")
 
     expect(b"e")
+    print("done, booting", end="\n\n")
 
     while True:
         sys.stdout.write(ser.read(1).decode(errors="replace"))

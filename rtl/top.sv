@@ -62,6 +62,24 @@ module top
     wire        sdram_ack;
     wire        sdram_rdy;
     wire[1:0]   sdram_wmask;
+    wire        sdram_burst;
+
+    wire        cpu_sdram_rd;
+    wire        cpu_sdram_wr;
+    wire[23:0]  cpu_sdram_addr_x16;
+    wire[15:0]  cpu_sdram_wdata;
+    wire[15:0]  cpu_sdram_rdata;
+    wire        cpu_sdram_ack;
+    wire        cpu_sdram_rdy;
+    wire[1:0]   cpu_sdram_wmask;
+
+    reg         video_fb_en;
+
+    wire        video_sdram_rd;
+    wire        video_sdram_rdy;
+    wire        video_sdram_ack;
+    wire[23:0]  video_sdram_addr_x16;
+    wire[15:0]  video_sdram_rdata;
 
     wire[31:0]  mem_addr;                // TODO: trim down useless bits?
     wire        mem_io_read_valid;
@@ -79,7 +97,7 @@ module top
 
     VGA_Timing_Generator vgatm(
         .clk_i(clk_sys),
-        .rst_i(1'b0),       // no HW POR on ulx3s?
+        .rst_i(~reset_n),       // no HW POR on ulx3s?
 
         .timing_o(timing0)
     );
@@ -133,12 +151,14 @@ module top
       .clk_i(clk_sys),
       .rst_i(~reset_n),
 
-      // // SDRAM
-      // output reg        sdram_rd,           // not strobe -- keep up until ACK (TODO verify)
-      // input             sdram_rdy,
-      // output reg        sdram_ack,
-      // output reg[23:0]  sdram_addr_x16,     // sdram address in 16-bit words (16Mw => 32MB)
-      // input[15:0]       sdram_rdata,
+      .fb_en_i(video_fb_en),
+
+      // SDRAM
+      .sdram_rd(video_sdram_rd),
+      .sdram_rdy(video_sdram_rdy),
+      .sdram_ack(video_sdram_ack),
+      .sdram_addr_x16(video_sdram_addr_x16),
+      .sdram_rdata(video_sdram_rdata),
 
       .timing_i(timing0),
       .timing_o(timing1),
@@ -262,12 +282,43 @@ module top
         .sys_ack(sdram_ack),
         .sys_rdy(sdram_rdy),
         .sys_wmask(sdram_wmask),
+        .burst_i(sdram_burst),
 
         .sdr_ab(sdram_a),
         .sdr_db(sdram_d),
         .sdr_ba(sdram_ba),
         .sdr_n_CS_WE_RAS_CAS({sdram_csn, sdram_wen, sdram_rasn, sdram_casn}),
         .sdr_dqm(sdram_dqm)
+    );
+
+    Sdram_Arbiter sdram_arb_inst(
+      .clk_i(clk_sys),
+      .rst_i(~reset_n),
+
+      .sdram_rd,
+      .sdram_wr,
+      .sdram_addr_x16,
+      .sdram_wdata,
+      .sdram_rdata,
+      .sdram_ack,
+      .sdram_rdy,
+      .sdram_wmask,
+      .sdram_burst,
+
+      .cpu_sdram_rd,
+      .cpu_sdram_wr,
+      .cpu_sdram_addr_x16,
+      .cpu_sdram_wdata,
+      .cpu_sdram_rdata,
+      .cpu_sdram_ack,
+      .cpu_sdram_rdy,
+      .cpu_sdram_wmask,
+
+      .video_sdram_rd,
+      .video_sdram_rdy,
+      .video_sdram_ack,
+      .video_sdram_addr_x16,
+      .video_sdram_rdata
     );
 
 `ifdef SYNTHESIS
@@ -328,14 +379,14 @@ module top
       .cpu_iBus_rsp_valid,
       .cpu_iBus_rsp_payload_data,
 
-      .sdram_rd,
-      .sdram_wr,
-      .sdram_rdy,
-      .sdram_ack,
-      .sdram_addr_x16,
-      .sdram_wdata,
-      .sdram_rdata,
-      .sdram_wmask,
+      .sdram_rd(cpu_sdram_rd),
+      .sdram_wr(cpu_sdram_wr),
+      .sdram_rdy(cpu_sdram_rdy),
+      .sdram_ack(cpu_sdram_ack),
+      .sdram_addr_x16(cpu_sdram_addr_x16),
+      .sdram_wdata(cpu_sdram_wdata),
+      .sdram_rdata(cpu_sdram_rdata),
+      .sdram_wmask(cpu_sdram_wmask),
 
       .addr_o(mem_addr),
       .bootrom_data_i(bootrom_data),
@@ -354,6 +405,7 @@ module top
 
         if (!reset_n) begin
             bg_col <= 0;
+            video_fb_en <= 1'b0;
         end else begin
             // write TRACE_REG
             if (mem_io_write_valid && mem_io_addr[11:0] == 12'h000) begin
@@ -378,6 +430,13 @@ module top
                 uart_rx_strobe <= 1'b1;
             end else begin
                 uart_rx_strobe <= 1'b0;
+            end
+
+            // write VIDEO CTRL
+            // TODO: this needs to be readable too
+            if (mem_io_write_valid && mem_io_addr[11:2] == 10'h003) begin
+                $display("WRITE VIDEO CTRL %08X", mem_io_wdata);
+                video_fb_en <= mem_io_wdata[0];
             end
 
             //

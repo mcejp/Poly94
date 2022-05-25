@@ -86,6 +86,7 @@ poly94.json: poly94.ys \
 		rtl/Memory_Ctrl.sv \
 		rtl/pll.v \
 		rtl/RGB_Color_Bars_Generator.v \
+		rtl/Sdram_Arbiter.sv \
 		rtl/Text_Generator.v \
 		rtl/tmds_encoder.v \
 		rtl/top.sv \

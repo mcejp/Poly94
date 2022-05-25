@@ -5,13 +5,18 @@
 #define TRACE_REG           (*(uint32_t volatile*)0x81000000)
 #define BG_COLOR            (*(uint32_t volatile*)0x81000004)
 #define UART_DATA           (*(uint32_t volatile*)0x81000008)
+#define VIDEO_CTRL          (*(uint32_t volatile*)0x8100000c)
 
 #define UART_TX_BUSY        1
 #define UART_RX_NOT_EMPTY   2
 
+enum { VIDEO_CTRL_FB_EN     = 0x01 };
+
 #define message_sdram_x32   ((uint32_t volatile*)0x04000100)
 #define message_sdram_x16   ((uint16_t volatile*)0x04000100)
 #define sdram_x8            ((uint8_t  volatile*)0x04000100)
+
+#define framebuf_sdram_x16  ((uint16_t volatile*)0x05000000)
 
 struct Load_Info {
     uint32_t* source_begin;
@@ -108,6 +113,16 @@ void bootldr() {
     message_sdram_x32[100] = 0x12345678;
 
     BG_COLOR = 0xffff00;
+
+    for (int y = 0; y < 480; y++) {
+        for (int x = 0; x < 640; x++) {
+            framebuf_sdram_x16[y * 640 + x] = y + x;
+        }
+    }
+
+    VIDEO_CTRL = VIDEO_CTRL_FB_EN;      // bug: enabling fb_en in the middle of the frame leaves it with wrong SDRAM read ptr
+
+    for (int i = 0; i < 100; i++) { BG_COLOR = i; }
 
     for (;;) {
         Puth(message_sdram_x32[100]);

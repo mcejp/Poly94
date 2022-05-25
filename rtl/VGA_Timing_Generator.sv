@@ -55,7 +55,8 @@ always @ (posedge clk_i) begin
         scanline <= 0;
         next_scanline <= 0;
         i <= 0;
-        next_i <= 1;
+        next_i <= 0;
+        is_picture_line <= 1'b0;
     end else begin
         if (next_i == 0) begin
             // end of line. handle here everything that should be handled synchronously with EOL (F, V flags)
