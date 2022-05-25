@@ -1,22 +1,12 @@
 #include <stdint.h>
 
-#define SDRAM_START         0x04000000
+#include <Poly94_hw.h>
 
-#define TRACE_REG           (*(uint32_t volatile*)0x81000000)
-#define BG_COLOR            (*(uint32_t volatile*)0x81000004)
-#define UART_DATA           (*(uint32_t volatile*)0x81000008)
-#define VIDEO_CTRL          (*(uint32_t volatile*)0x8100000c)
+#define message_sdram_x32   ((uint32_t volatile*)(SDRAM_START + 0x100))
+#define message_sdram_x16   ((uint16_t volatile*)(SDRAM_START + 0x100))
+#define sdram_x8            ((uint8_t  volatile*)(SDRAM_START + 0x100))
 
-#define UART_TX_BUSY        1
-#define UART_RX_NOT_EMPTY   2
-
-enum { VIDEO_CTRL_FB_EN     = 0x01 };
-
-#define message_sdram_x32   ((uint32_t volatile*)0x04000100)
-#define message_sdram_x16   ((uint16_t volatile*)0x04000100)
-#define sdram_x8            ((uint8_t  volatile*)0x04000100)
-
-#define framebuf_sdram_x16  ((uint16_t volatile*)0x05000000)
+#define framebuf_sdram_x16  ((uint16_t volatile*)(SDRAM_START + 16 * 1024 * 1024))
 
 struct Load_Info {
     uint32_t* source_begin;

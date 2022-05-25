@@ -9,7 +9,7 @@ OBJDUMP=$(TOOLCHAIN)objdump
 SIZE=$(TOOLCHAIN)size
 STRIP=$(TOOLCHAIN)strip
 
-CFLAGS=-ffreestanding -ffunction-sections -fdata-sections -Os -Wall -Werror
+CFLAGS=-I../sdk/include -ffreestanding -ffunction-sections -fdata-sections -Os -Wall -Werror
 LDFLAGS=-Wl,--gc-sections -nostartfiles -nostdlib
 
 OUTPUT=boot.bin
