@@ -26,7 +26,8 @@ build_ulx3s:
   needs: []
 
   script:
-    - make -C boot
+    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -S boot -B boot/build
+    - cmake --build boot/build
     - make ulx3s.bit
 
   artifacts:
@@ -43,7 +44,8 @@ test_cocotb:
   needs: []
 
   script:
-    - make -C boot
+    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -S boot -B boot/build
+    - cmake --build boot/build
     - make -f Makefile.coco
     - "! grep -q '<failure' results.xml"
 

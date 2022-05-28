@@ -62,8 +62,8 @@ endif
 endif
 
 
-ulx3s.bit: boot/boot.vh ulx3s_out.config
-	ecpbram --from build/boot_syn.vh --to boot/boot.vh --in ulx3s_out.config --out ulx3s_final.config
+ulx3s.bit: boot/build/boot.vh ulx3s_out.config
+	ecpbram --from build/boot_syn.vh --to boot/build/boot.vh --in ulx3s_out.config --out ulx3s_final.config
 	ecppack ulx3s_final.config ulx3s.bit
 
 ulx3s_out.config: poly94.json ulx3s_v20.lpf
