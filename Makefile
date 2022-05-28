@@ -67,9 +67,11 @@ ulx3s.bit: boot/boot.vh ulx3s_out.config
 	ecppack ulx3s_final.config ulx3s.bit
 
 ulx3s_out.config: poly94.json ulx3s_v20.lpf
+	mkdir -p build
 	nextpnr-ecp5 --85k --json poly94.json \
 		--lpf ulx3s_v20.lpf \
 		--textcfg ulx3s_out.config \
+		--report build/nextpnr-report.json \
 		2>&1 | tee nextpnr.log
 
 boot/boot_syn.vh:

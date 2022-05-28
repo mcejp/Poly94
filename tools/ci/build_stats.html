@@ -1,0 +1,114 @@
+<style>
+/* color scheme from Bootstrap v5 */
+body {
+    font-family: "Segoe UI", "Roboto", sans-serif;
+}
+body, td {
+    font-size: 14px;
+}
+a, a:hover, a:visited, a:active {
+    color: #0d6efd;
+    text-decoration: none;
+}
+a:hover {
+    color: #0a58ca;
+}
+
+/* border-color derived from text-muted color: https://meyerweb.com/eric/tools/color-blend/#6C757D:FFFFFF:4:rgbd */
+table.builds {
+    border-spacing: 0;
+    border-collapse: collapse;
+}
+table.builds>thead>tr>th {
+    font-weight: 600;
+    padding: 0.25em 0.5em 0.25em 0.5em;
+    border-bottom: 2px solid rgb(226,227,229);
+    text-align: left;
+}
+table.builds>tbody>tr>td {
+    padding: 0.25em 0.5em 0.25em 0.5em;
+    text-align: right;
+}
+
+table.builds>tbody>tr>td {
+    border-top: 1px solid rgb(226,227,229);
+}
+/* bottom border at end of table */
+table.device-detail>tbody>tr:last-child>td {
+    border-bottom: 1px solid rgb(226,227,229);
+}
+td.error { background-color: rgb(220, 53, 69); color: #fff; font-weight: 600 }
+td.success { background-color: rgb(25, 135, 84); color: #fff; font-weight: 600 }
+</style>
+
+{% set RESOURCES = ["EHXPLLL", "MULT18X18D", "TRELLIS_COMB", "TRELLIS_FF", "TRELLIS_RAMW"] %}
+
+<table class="builds">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Timestamp</th>
+      <th>Commit</th>
+      <th>Sim</th>
+      <th>Build</th>
+      <th>f<sub>max</sub></th>
+
+      {% for res in RESOURCES %}
+      <th>{{ res }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for build in builds %}
+    <tr>
+      <td>{{ build.id }}</td>
+      <td><a href="{{ build.pipeline_url }}">{{ build.pipeline_timestamp }}</a></td>
+      <td style="text-align: left">
+        <p><a href="{{ project_url }}/-/commit/{{ build.commit_sha1 }}">{{ build.branch }} &RightArrow; {{ build.commit_sha1[:8] }}</a></p>
+        <p>{{ (build.commit_title | default(""))[:50] }}</p>
+      </td>
+
+      {% if build.sim.result == "pass" %}
+      <td style="text-align: center" class="success">PASS</td>
+      {% elif build.sim.result == "fail" %}
+      <td style="text-align: center" class="error">FAIL</td>
+      {% else %}
+      <td style="text-align: center">?</td>
+      {% endif %}
+
+      {% if build.build.result == "pass" %}
+      <td style="text-align: center" class="success">PASS</td>
+      {% elif build.build.result == "fail" %}
+      <td style="text-align: center" class="error">FAIL</td>
+      {% else %}
+      <td style="text-align: center">?</td>
+      {% endif %}
+
+      <td>
+        <table>
+        {% for clock, result in (build.build.fmax | default({})).items() %}
+          <tr>
+            <td>{{ clock|replace("$glbnet$", "") }}</td>
+            <td style="padding-left: 0.5em; text-align: right; opacity: 0.7">{{ "%.1f" | format(result.constraint) }}</td>
+            <td style="padding-left: 0.5em; text-align: right">{{ "%.1f" | format(result.achieved) }}</td>
+          </tr>
+        {% endfor %}
+        </table>
+      </td>
+
+      {% for res in RESOURCES %}
+      <td>
+        {% set result = (build.build.utilization | default({}))[res] %}
+        {% if result %}
+        {{ result.used }}/{{ result.available }}
+        {% endif %}
+      </td>
+      {% endfor %}
+
+      {#
+      <td>{{ build }}</td>
+      #}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
