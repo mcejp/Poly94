@@ -91,11 +91,11 @@ module top
     wire[31:0]  mem_io_wdata;
 
     wire VGA_Timing timing0;
-    wire VGA_Timing timing1;
+    wire VGA_Timing timing1         /* verilator public */;
     wire hsync_n1, vsync_n1, blank_n1, end_of_line1, end_of_frame1;
     wire hsync_n2, vsync_n2, blank_n2, end_of_line2, end_of_frame2;
 
-    wire [23:0] color1, color2;
+    wire [23:0] color1, color2      /* verilator public */;
     reg[23:0] bg_col;
 
     VGA_Timing_Generator vgatm(

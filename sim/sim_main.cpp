@@ -1,9 +1,12 @@
 #include "sdr_sdram/sdr_sdram.h"
+#include "write_ppm.hpp"
 
 #include "Vtop.h"
 #include "Vtop_top.h"
 #include "verilated.h"
 #include <verilated_vcd_c.h>
+
+#include <array>
 
 
 // SDRAM size
@@ -19,6 +22,9 @@ int main(int argc, char** argv, char** env) {
    // Init SDRAM C++ model (8192 rows, 512 cols)
    vluint8_t sdram_flags = FLAG_DATA_WIDTH_16; // | FLAG_BANK_INTERLEAVING | FLAG_BIG_ENDIAN;
    SDRAM* sdr  = new SDRAM(SDRAM_BIT_ROWS, SDRAM_BIT_COLS, sdram_flags, nullptr /*"sdram.log"*/);
+
+   std::array<uint32_t, 640 * 480> framebuffer {};
+   int pixel_i;
 
    Vtop top;
    top.clk_25mhz = 0;
@@ -51,8 +57,21 @@ int main(int argc, char** argv, char** env) {
       if (top.clk_25mhz && !top.top->uart_tx_busy && top.top->uart_tx_strobe) {
          printf("UART  | %c\n", (int) top.top->uart_tx_data);
       }
+
+      if (top.clk_25mhz && (top.top->timing1 & (1<<2))) {
+         if (pixel_i >= 640 * 480) {
+               printf("%9d testbench: begin new frame\n", i);
+               pixel_i = 0;
+         }
+
+         framebuffer[pixel_i] = top.top->color2;
+         pixel_i++;
+      }
    }
 
    trace.close();
+
+   write_ppm("framebuffer.ppm", 640, 480, &framebuffer[0]);
+
    return 0;
 }
