@@ -11,7 +11,7 @@ async def test_cpu_boot(dut):
     uart_log = b""
     EXPECTED = b"12345678\n\nHello"
 
-    for cycle in range(3000):
+    for cycle in range(4000):
         # Drive system clock
         dut.clk_25mhz.value = 0
         await Timer(PERIOD_NS / 2, units="ns")

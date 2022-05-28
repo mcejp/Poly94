@@ -104,16 +104,6 @@ void bootldr() {
 
     BG_COLOR = 0xffff00;
 
-    for (int y = 0; y < 480; y++) {
-        for (int x = 0; x < 640; x++) {
-            framebuf_sdram_x16[y * 640 + x] = y + x;
-        }
-    }
-
-    VIDEO_CTRL = VIDEO_CTRL_FB_EN;      // bug: enabling fb_en in the middle of the frame leaves it with wrong SDRAM read ptr
-
-    for (int i = 0; i < 100; i++) { BG_COLOR = i; }
-
     for (;;) {
         Puth(message_sdram_x32[100]);
         Puts("\n\n");
@@ -129,6 +119,14 @@ void bootldr() {
 
         break;
     }
+
+    for (int y = 0; y < 480; y++) {
+        for (int x = 0; x < 640; x++) {
+            framebuf_sdram_x16[y * 640 + x] = y + x;
+        }
+    }
+
+    VIDEO_CTRL = VIDEO_CTRL_FB_EN;      // bug: enabling fb_en in the middle of the frame leaves it with wrong SDRAM read ptr
 
     void* INIT_ADDR = (void*) SDRAM_START;      // this kills code that we put in SDRAM!
     uint8_t* addr = (uint8_t*) INIT_ADDR;
