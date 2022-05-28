@@ -160,7 +160,7 @@ module sdram_pnru (
                 if (rd) sys_do  <= sdr_q;
                 if (wr) sdr_cmd <= BURST_STOP;
                 if (bursting) begin
-                  $display("SDRAM burst cnt %d, put out data, stop=%d", burst_count, (burst_count == 64 - CL));
+                  // $display("SDRAM burst cnt %d, put out data, stop=%d", burst_count, (burst_count == 64 - CL));
                   if (burst_count == 64 - CL) begin    // might be off by 1 or 2
                     sdr_cmd <= BURST_STOP;
                   end
@@ -168,7 +168,7 @@ module sdram_pnru (
                   if (burst_count < 63) begin
                     state <= RWRDY;
                   end else begin
-                    $display("SDRAM burst finish, this is the last word");
+                    // $display("SDRAM burst finish, this is the last word");
                     state <= ACKWT;
                   end
                 end else begin

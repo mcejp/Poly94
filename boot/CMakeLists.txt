@@ -22,4 +22,10 @@ add_executable(boot
     boot.c
     )
 
+add_executable(test_framebuffer
+    start.s
+    test_framebuffer.c
+    )
+
 target_postprocess(boot)
+target_postprocess(test_framebuffer)

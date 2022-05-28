@@ -27,7 +27,7 @@ build_ulx3s:
 
   script:
     - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -S boot -B boot/build
-    - cmake --build boot/build
+    - cmake --build boot/build --target boot
     - make ulx3s.bit
 
   artifacts:
@@ -45,7 +45,7 @@ test_cocotb:
 
   script:
     - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -S boot -B boot/build
-    - cmake --build boot/build
+    - cmake --build boot/build --target boot
     - make -f Makefile.coco
     - "! grep -q '<failure' results.xml"
 
@@ -57,12 +57,33 @@ test_cocotb:
     when: always
 
 
+test_verilator:
+  stage: test
+  needs: []
+
+  script:
+    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -S boot -B boot/build
+    - cmake --build boot/build --target test_framebuffer
+    - BOOTROM=boot/build/test_framebuffer.bin DUMP_FRAMEBUF=framebuffer.ppm NUM_CYCLES=4000000 make sim
+    - if ! cmp -s framebuffer.ppm test_expected/test_framebuffer.ppm; then echo "Output not equal to expectation"; touch verilator.fail; exit 1; fi
+    - touch verilator.ok
+
+  artifacts:
+    paths:
+      - framebuffer.ppm
+      - verilator.fail
+      - verilator.pass
+    when: always
+
+
 reports:
   stage: upload
   needs:
   - job: build_ulx3s
     artifacts: true
   - job: test_cocotb
+    artifacts: true
+  - job: test_verilator
     artifacts: true
   when: always
 

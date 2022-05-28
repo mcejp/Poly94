@@ -8,7 +8,7 @@ module CPU_Rom(
     parameter data_width = 32;
     parameter addr_width = 10;
 
-    reg [data_width-1:0] rom[2**addr_width-1:0];
+    reg [data_width-1:0] rom[2**addr_width-1:0]     /* verilator public */;
     initial
     begin
         `ifdef SYNTHESIS

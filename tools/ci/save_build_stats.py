@@ -36,6 +36,11 @@ try:
 except FileNotFoundError:
     results["sim"] = dict(result=None)
 
+# TODO: refactor completely to (probably) save results for individual tests
+if os.path.exists("verilator.fail"):
+    results["sim"]["result"] = "fail"
+elif not os.path.exists("verilator.pass"):
+    results["sim"]["result"] = None
 
 # Results of P&R
 

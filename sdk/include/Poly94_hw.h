@@ -1,6 +1,8 @@
 #ifndef POLY94_HW_H
 #define POLY94_HW_H
 
+#include <stdint.h>
+
 /* memory map */
 
 enum { SDRAM_START          = 0x04000000 };

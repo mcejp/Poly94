@@ -1,5 +1,3 @@
-#include <stdint.h>
-
 #include <Poly94_hw.h>
 
 #define message_sdram_x32   ((uint32_t volatile*)(SDRAM_START + 0x100))
