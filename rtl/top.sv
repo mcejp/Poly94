@@ -64,8 +64,8 @@ module top
     wire[1:0]   sdram_wmask;
     wire        sdram_burst;
 
-    wire[15:0]  sdr_d;
-    wire        sdr_dq_oe;
+    wire[15:0]  sdr_d           /* verilator public */;
+    wire        sdr_dq_oe       /* verilator public */;
 
     wire        cpu_sdram_rd;
     wire        cpu_sdram_wr;
@@ -193,9 +193,9 @@ module top
     reg uart_rx_strobe;
     wire[7:0] uart_rx_data;
     wire uart_rx_valid;
-    reg uart_tx_strobe;
-    reg[7:0] uart_tx_data;
-    wire uart_tx_busy;
+    reg uart_tx_strobe      /* verilator public */;
+    reg[7:0] uart_tx_data   /* verilator public */;
+    wire uart_tx_busy       /* verilator public */;
 
     reg reset_n = 1'b0;
     logic[7:0] reset_cnt = 0;

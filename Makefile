@@ -105,6 +105,6 @@ prog: ulx3s.bit
 	fujprog ulx3s.bit
 
 sim:
-	verilator --top-module top -Ilib/verilog-uart/rtl -Irtl -Irtl/ip -Wno-fatal --cc --exe --trace sim/sim_main.cpp rtl/top.sv
+	verilator --top-module top -Ilib/verilog-uart/rtl -Irtl -Irtl/ip -Wno-fatal --cc --exe --trace sim/sim_main.cpp sim/sdr_sdram/sdr_sdram.cpp rtl/top.sv
 	$(MAKE) -C obj_dir -f Vtop.mk -j
 	obj_dir/Vtop
