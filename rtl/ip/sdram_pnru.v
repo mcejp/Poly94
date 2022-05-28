@@ -24,7 +24,9 @@ module sdram_pnru (
     output wire  [3:0] sdr_n_CS_WE_RAS_CAS, // SDRAM nCS, nWE, nRAS, nCAS
     output wire  [1:0] sdr_ba,              // SDRAM bank address
     output reg  [12:0] sdr_ab,              // SDRAM address
-    inout  wire [15:0] sdr_db,              // SDRAM data
+    input  wire [15:0] sdr_q,               // SDRAM output data
+    output wire [15:0] sdr_d,               // SDRAM input data
+    output reg         sdr_dq_oe,
     output reg   [1:0] sdr_dqm = 2'b11      // SDRAM DQM; note: DQM==2'b11 during init
   );
 
@@ -56,8 +58,9 @@ module sdram_pnru (
   // dataflow assignments
   assign sdr_n_CS_WE_RAS_CAS = sdr_cmd;
   assign sdr_ba = (state==CONFIG) ? 2'b00 : ab[10:9];
-  assign sdr_db = (state==RWRDY && wr) ? di : 16'hzzzz;
-  
+  assign sdr_d = di;
+  assign sdr_dq_oe = (state==RWRDY && wr);
+
   // controller states & FSM
   localparam IDLE = 0, RFRSH1 = 1, RFRSH2 = 2, CONFIG = 3, RDWR = 4, RWRDY = 5, ACKWT = 6, WAIT = 7;
 
@@ -154,7 +157,7 @@ module sdram_pnru (
       
       RWRDY:  begin // latch read result, or write data
                 sys_rdy <= 1'b1;
-                if (rd) sys_do  <= sdr_db;
+                if (rd) sys_do  <= sdr_q;
                 if (wr) sdr_cmd <= BURST_STOP;
                 if (bursting) begin
                   $display("SDRAM burst cnt %d, put out data, stop=%d", burst_count, (burst_count == 64 - CL));

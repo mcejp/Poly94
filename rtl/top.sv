@@ -64,6 +64,9 @@ module top
     wire[1:0]   sdram_wmask;
     wire        sdram_burst;
 
+    wire[15:0]  sdr_d;
+    wire        sdr_dq_oe;
+
     wire        cpu_sdram_rd;
     wire        cpu_sdram_wr;
     wire[23:0]  cpu_sdram_addr_x16;
@@ -285,11 +288,15 @@ module top
         .burst_i(sdram_burst),
 
         .sdr_ab(sdram_a),
-        .sdr_db(sdram_d),
+        .sdr_d(sdr_d),
+        .sdr_q(sdram_d),
+        .sdr_dq_oe(sdr_dq_oe),
         .sdr_ba(sdram_ba),
         .sdr_n_CS_WE_RAS_CAS({sdram_csn, sdram_wen, sdram_rasn, sdram_casn}),
         .sdr_dqm(sdram_dqm)
     );
+
+    assign sdram_d = sdr_dq_oe ? sdr_d : 16'hzzzz;
 
     Sdram_Arbiter sdram_arb_inst(
       .clk_i(clk_sys),
