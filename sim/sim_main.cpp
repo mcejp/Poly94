@@ -8,6 +8,7 @@
 #include <verilated_vcd_c.h>
 
 #include <array>
+#include <sstream>
 
 
 // SDRAM size
@@ -40,6 +41,8 @@ int main(int argc, char** argv, char** env) {
 
    std::array<uint32_t, 640 * 480> framebuffer {};
    int pixel_i;
+
+   std::stringstream uart_line;
 
    Vtop top;
    top.clk_25mhz = 0;
@@ -84,7 +87,15 @@ int main(int argc, char** argv, char** env) {
 
       // UART
       if (top.clk_25mhz && !top.top->uart_tx_busy && top.top->uart_tx_strobe) {
-         printf("UART  | %c\n", (int) top.top->uart_tx_data);
+         char c = top.top->uart_tx_data;
+
+         if (c == '\n') {         
+            printf("UART  | %s\n", uart_line.str().c_str());
+            uart_line.str("");
+         }
+         else {
+            uart_line << c;
+         }
       }
 
       if (top.clk_25mhz && (top.top->timing1 & (1<<2))) {
@@ -105,6 +116,10 @@ int main(int argc, char** argv, char** env) {
    if (maybe_framebuffer_dump_filename != nullptr) {
       write_ppm(maybe_framebuffer_dump_filename, 640, 480, &framebuffer[0]);
       fprintf(stderr, "Saved %s\n", maybe_framebuffer_dump_filename);
+   }
+
+   if (!uart_line.str().empty()) {
+      printf("UART  | %s\n", uart_line.str().c_str());
    }
 
    return 0;
