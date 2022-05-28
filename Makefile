@@ -63,7 +63,7 @@ endif
 
 
 ulx3s.bit: boot/boot.vh ulx3s_out.config
-	ecpbram --from boot/boot_syn.vh --to boot/boot.vh --in ulx3s_out.config --out ulx3s_final.config
+	ecpbram --from build/boot_syn.vh --to boot/boot.vh --in ulx3s_out.config --out ulx3s_final.config
 	ecppack ulx3s_final.config ulx3s.bit
 
 ulx3s_out.config: poly94.json ulx3s_v20.lpf
@@ -74,8 +74,9 @@ ulx3s_out.config: poly94.json ulx3s_v20.lpf
 		--report build/nextpnr-report.json \
 		2>&1 | tee nextpnr.log
 
-boot/boot_syn.vh:
-	ecpbram --generate boot/boot_syn.vh --width 32 --depth 1024 --seed 0
+build/boot_syn.vh:
+	mkdir -p build
+	ecpbram --generate build/boot_syn.vh --width 32 --depth 1024 --seed 0
 
 poly94.json: poly94.ys \
 		lib/verilog-uart/rtl/uart_rx.v \
@@ -98,7 +99,7 @@ poly94.json: poly94.ys \
 		rtl/ecp5/ecp5pll.sv \
 		rtl/ip/sdram_pnru.v \
 		rtl/ip/VexRiscv.v \
-		boot/boot_syn.vh
+		build/boot_syn.vh
 	yosys -m ghdl poly94.ys | tee yosys.log
 
 prog: ulx3s.bit

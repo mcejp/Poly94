@@ -12,7 +12,7 @@ module CPU_Rom(
     initial
     begin
         `ifdef SYNTHESIS
-        $readmemh("boot/boot_syn.vh", rom);     // placeholder that is patched at later stage
+        $readmemh("build/boot_syn.vh", rom);    // placeholder that is patched at later stage
                                                 // thus permitting ROM update without resynthesis
         `else
         $readmemh("boot/boot.vh", rom);
