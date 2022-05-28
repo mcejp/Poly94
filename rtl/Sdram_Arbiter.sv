@@ -3,6 +3,8 @@
 //
 // indent: 2sp
 
+// `define VERBOSE
+
 module Sdram_Arbiter(
   input         clk_i,
   input         rst_i,
@@ -56,13 +58,17 @@ always @ (posedge clk_i) begin
   end else begin
     if (!sdram_busy) begin
       if (video_sdram_rd) begin
+`ifdef VERBOSE
         $display("Sdram_Arb: begin video read @ %08Xh", {video_sdram_addr_x16, 1'b0});
+`endif
         mux <= MUX_VIDEO;
         sdram_busy <= 1'b1;
         // mask_readiness <= 1'b1;
         waitstate_counter <= 2;
       end else if (cpu_sdram_rd || cpu_sdram_wr) begin
+`ifdef VERBOSE
         $display("Sdram_Arb: begin CPU wr=%d addr=%08Xh", cpu_sdram_wr, {cpu_sdram_addr_x16, 1'b0});
+`endif
         mux <= MUX_CPU;
         sdram_busy <= 1'b1;
         // mask_readiness <= 1'b1;
@@ -70,13 +76,17 @@ always @ (posedge clk_i) begin
       end
     end else begin
       if (mux == MUX_VIDEO && video_sdram_ack) begin
+`ifdef VERBOSE
         $display("Sdram_Arb: video ack");
+`endif
         sdram_busy <= 1'b0;
         mux <= MUX_NONE;
       end
 
       if (mux == MUX_CPU && cpu_sdram_ack) begin
+`ifdef VERBOSE
         $display("Sdram_Arb: CPU ack");
+`endif
         sdram_busy <= 1'b0;
         mux <= MUX_NONE;
       end

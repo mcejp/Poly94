@@ -3,7 +3,7 @@
 //
 // indent: 2sp
 
-// `define VERBOSE_VIDCTL
+// `define VERBOSE
 
 `default_nettype none
 `include "VGA_Timing.sv"
@@ -82,7 +82,9 @@ always @ (posedge clk_i) begin
     end
 
     if (timing_i.end_of_line) begin
+`ifdef VERBOSE
       $display("Video: EOL; en=%d vsync_n=%d", fb_en_i, timing_i.vsync_n);
+`endif
     end
 
     if (timing_i.end_of_line && timing_i.vsync_n == 1'b1) begin   // FIXME: should start loading if *next* line is not blanked
@@ -92,7 +94,6 @@ always @ (posedge clk_i) begin
       if (fb_en_i) begin
         // if framebuffer enabled, begin sdram read
         sdram_rd <= 1'b1;
-        $display("VIDEO_CTRL: request read");
         waitstate <= 3;
       end
     end else if (timing_i.blank_n) begin
@@ -106,13 +107,16 @@ always @ (posedge clk_i) begin
       // sdram cycle finished, decide if we need to do another one
       if (line_write_ptr < 320) begin
         sdram_rd <= 1'b1;
-        $display("VIDEO_CTRL: request new read");
         waitstate <= 3;
       end
     end else if (sdram_rd && sdram_rdy && waitstate == 0) begin
+`ifdef VERBOSE
       $display("VIDEO_CTRL: got data word [%03d] => %04Xh", line_write_ptr, sdram_rdata);
+`endif
       if (line_write_ptr[BURST_BITS-1:0] == BURST_LEN - 1) begin
+`ifdef VERBOSE
         $display("video ctrl: ACK burst @ %d", line_write_ptr);
+`endif
         sdram_ack <= 1'b1;
         sdram_rd <= 1'b0;
         sdram_addr_x16[17:0] <= sdram_addr_x16[17:0] + BURST_LEN;
