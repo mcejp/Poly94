@@ -104,7 +104,7 @@ module sdram_pnru (
                 if (ctr>=RFTIME) state <= RFRSH1;         // as needed, refresh a row
                 else if (rd|wr) begin
                   state <= RDWR;           // else respond to rd or wr request
-                  sdr_dqm <= ~sys_wmask;
+                  sdr_dqm <= rd ? 2'b00 : ~sys_wmask;
                   bursting <= burst_i;
                 end else begin
                   sys_rdy <= 1'b1;

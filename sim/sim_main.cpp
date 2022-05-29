@@ -95,7 +95,7 @@ int main(int argc, char** argv, char** env) {
          char c = top.top->uart_tx_data;
 
          if (c == '\n') {         
-            printf("UART  | %s\n", uart_line.str().c_str());
+            printf("%9ld UART  | %s\n", half_cycle / 2, uart_line.str().c_str());
             uart_line.str("");
          }
          else {
@@ -105,7 +105,7 @@ int main(int argc, char** argv, char** env) {
 
       if (top.clk_25mhz && (top.top->timing1 & (1<<2))) {
          if (pixel_i >= 640 * 480) {
-               printf("%9ld testbench: begin new frame\n", half_cycle / 2);
+               // printf("%9ld testbench: begin new frame\n", half_cycle / 2);
                pixel_i = 0;
          }
 
