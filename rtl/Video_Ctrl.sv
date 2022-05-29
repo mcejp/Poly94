@@ -53,8 +53,13 @@ wire[15:0] line_read_data = line_buffer[line_read_ptr];
 
 reg[9:0] line_write_ptr;
 
+reg[9:0] line_no;
+
 reg[1:0] waitstate;                   // TODO: this needs to be validated for correctness
                                       // (or better yet, replaced by better readiness signalling)
+
+localparam DISPLAY_W = 320;
+localparam DISPLAY_H = 240;
 
 localparam BURST_LEN = 64;
 localparam BURST_BITS = 6;
@@ -72,6 +77,7 @@ always @ (posedge clk_i) begin
 
     line_read_ptr <= 10'd0;
     line_write_ptr <= 10'd0;
+    line_no <= '0;
   end else begin
     if (fb_en_i) begin
       rgb_o <= {line_read_data[15:11], line_read_data[15:13], // r
@@ -90,8 +96,9 @@ always @ (posedge clk_i) begin
     if (timing_i.end_of_line && timing_i.vsync_n == 1'b1) begin   // FIXME: should start loading if *next* line is not blanked
       line_read_ptr <= 10'd0;
       line_write_ptr <= 10'd0;
+      line_no <= line_no + 1;
 
-      if (fb_en_i) begin
+      if (fb_en_i && line_no < DISPLAY_H) begin
         // if framebuffer enabled, begin sdram read
         sdram_rd <= 1'b1;
         waitstate <= 3;
@@ -105,7 +112,7 @@ always @ (posedge clk_i) begin
       sdram_ack <= 1'b0;
 
       // sdram cycle finished, decide if we need to do another one
-      if (line_write_ptr < 320) begin
+      if (line_write_ptr < DISPLAY_W) begin
         sdram_rd <= 1'b1;
         waitstate <= 3;
       end
@@ -129,6 +136,7 @@ always @ (posedge clk_i) begin
 
     if (timing_i.end_of_frame) begin
       sdram_addr_x16[17:0] <= 18'h00000;
+      line_no <= '0;
     end
   end
 
