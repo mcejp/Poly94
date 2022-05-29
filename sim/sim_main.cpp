@@ -25,6 +25,7 @@ int main(int argc, char** argv, char** env) {
    auto maybe_rom_filename = getenv("BOOTROM");
    auto maybe_framebuffer_dump_filename = getenv("DUMP_FRAMEBUF");
    auto maybe_num_cycles_str = getenv("NUM_CYCLES");
+   auto maybe_sdram_preload = getenv("SDRAM_PRELOAD");
 
    //
 
@@ -36,8 +37,12 @@ int main(int argc, char** argv, char** env) {
    }
 
    // Init SDRAM C++ model (8192 rows, 512 cols)
-   vluint8_t sdram_flags = FLAG_DATA_WIDTH_16; // | FLAG_BANK_INTERLEAVING | FLAG_BIG_ENDIAN;
+   vluint8_t sdram_flags = FLAG_DATA_WIDTH_16 | FLAG_BANK_INTERLEAVING;
    SDRAM* sdr  = new SDRAM(SDRAM_BIT_ROWS, SDRAM_BIT_COLS, sdram_flags, nullptr /*"sdram.log"*/);
+
+   if (maybe_sdram_preload != nullptr) {
+      sdr->load(maybe_sdram_preload, 32 * 1024 * 1024, 0x00000000);
+   }
 
    std::array<uint32_t, 640 * 480> framebuffer {};
    int pixel_i;
