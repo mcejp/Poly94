@@ -10,7 +10,8 @@ import psycopg
 
 with psycopg.connect(os.environ["POSTGRES_CONN_STRING"]) as conn:
     cursor = conn.cursor()
-    cursor.execute('SELECT id, pipeline_timestamp, pipeline_url, branch, commit_sha1, commit_timestamp, "attributes" FROM builds ORDER BY pipeline_timestamp DESC')
+    cursor.execute('SELECT id, pipeline_timestamp, pipeline_url, branch, commit_sha1, commit_timestamp, "attributes" '
+                   'FROM builds ORDER BY pipeline_timestamp DESC, id DESC')
     # TODO: can fetch directly as dict?
     builds = [dict(id=row[0],
                    pipeline_timestamp=row[1],
