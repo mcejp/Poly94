@@ -52,6 +52,7 @@ td.success { background-color: rgb(25, 135, 84); color: #fff; font-weight: 600 }
       <th>Sim</th>
       <th>Build</th>
       <th>f<sub>max</sub></th>
+      <th>Benchmark</th>
 
       {% for res in RESOURCES %}
       <th>{{ res }}</th>
@@ -94,6 +95,15 @@ td.success { background-color: rgb(25, 135, 84); color: #fff; font-weight: 600 }
           </tr>
         {% endfor %}
         </table>
+      </td>
+
+      <td>
+        {% if build.benchmark %}
+        <table>
+          <tr><td>{{ "%.1f" | format(build.benchmark["dmips"]) }} DMIPS</td></tr>
+          <tr><td>{{ "%.2f" | format(build.benchmark["dmips_per_mhz"]) }} DMIPS / MHz</td></tr>
+        </table>
+        {% endif %}
       </td>
 
       {% for res in RESOURCES %}

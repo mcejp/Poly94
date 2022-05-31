@@ -70,6 +70,20 @@ except FileNotFoundError:
     results["build"] = dict(result="fail")
 
 
+# Benchmark
+
+CPU_MHZ = 25
+
+try:
+    with open("dhrystones_per_second", "rt") as f:
+        dmips = int(f.read()) / 1757
+        results["benchmark"] = dict(dmips=dmips, dmips_per_mhz=dmips / CPU_MHZ)
+except FileNotFoundError:
+    logger.error("dhrystones_per_second not found")
+except ValueError:
+    logger.error("dhrystones_per_second malformed or test failed")
+
+
 # Connect to DB
 
 with psycopg.connect(os.environ["POSTGRES_CONN_STRING"]) as conn:
