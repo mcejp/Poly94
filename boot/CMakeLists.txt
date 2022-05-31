@@ -28,11 +28,24 @@ add_executable(boot_sdram
     start_sdram.s
     )
 
+add_executable(test_dhrystone
+    start.s
+    dhrystone/dhrystone.c
+    dhrystone/dhrystone.h
+    dhrystone/dhrystone_main.c
+    stdio.c
+    )
+
 add_executable(test_framebuffer
     start.s
     test_framebuffer.c
     )
 
 target_postprocess(boot)
+target_link_options(boot PRIVATE "-T" "${CMAKE_CURRENT_SOURCE_DIR}/boot.ld")
 target_postprocess(boot_sdram)
+target_link_options(boot_sdram PRIVATE "-T" "${CMAKE_CURRENT_SOURCE_DIR}/boot.ld")
+target_postprocess(test_dhrystone)
+target_link_options(test_dhrystone PRIVATE "-T" "${CMAKE_CURRENT_SOURCE_DIR}/sdram.ld")
 target_postprocess(test_framebuffer)
+target_link_options(test_framebuffer PRIVATE "-T" "${CMAKE_CURRENT_SOURCE_DIR}/boot.ld")

@@ -19,4 +19,10 @@ enum { UART_RX_NOT_EMPTY    = 0x02 };
 
 enum { VIDEO_CTRL_FB_EN     = 0x01 };
 
+/* RISC-V stuff */
+
+#define read_csr(reg) ({ unsigned long __tmp; \
+    asm volatile ("csrr %0, " #reg : "=r"(__tmp)); \
+    __tmp; })
+
 #endif
