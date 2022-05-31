@@ -3,9 +3,12 @@
 .global _boot
 
 _boot:
+    # init stack pointer
 	la x2, __stack
-    la t0, 1
-    la t1, 0x8100000c
-    sw t0, (t1)
+
+    # call SDRAM entry point
     la t0, 0x04000000
-	jr t0
+    jalr ra, t0
+
+    # loop indefinitely if callee returns
+1:  j 1b
