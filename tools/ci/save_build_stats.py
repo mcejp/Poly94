@@ -14,9 +14,14 @@ CREATE TABLE public.builds (
 """
 
 import json
+import logging
 import os
 
 import psycopg
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 results = {}
@@ -30,17 +35,26 @@ try:
         xml = f.read()
 
     if "<failure" not in xml:
+        logger.info("cocotb PASS")
         results["sim"] = dict(result="pass")
     else:
+        logger.info("cocotb FAIL")
         results["sim"] = dict(result="fail")
 except FileNotFoundError:
+    logger.error("results.xml not found")
     results["sim"] = dict(result=None)
 
 # TODO: refactor completely to (probably) save results for individual tests
 if os.path.exists("verilator.fail"):
+    logger.info("verilator FAIL")
     results["sim"]["result"] = "fail"
-elif not os.path.exists("verilator.pass"):
+elif os.path.exists("verilator.pass"):
+    logger.info("verilator PASS")
+    # do not change sim result
+else:
+    logger.error("verilator result unknown")
     results["sim"]["result"] = None
+
 
 # Results of P&R
 

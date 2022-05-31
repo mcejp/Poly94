@@ -66,7 +66,7 @@ test_verilator:
     - cmake --build boot/build --target test_framebuffer
     - BOOTROM=boot/build/test_framebuffer.bin DUMP_FRAMEBUF=framebuffer.ppm NUM_CYCLES=4000000 make sim
     - if ! cmp -s framebuffer.ppm test_expected/test_framebuffer.ppm; then echo "Output not equal to expectation"; touch verilator.fail; exit 1; fi
-    - touch verilator.ok
+    - touch verilator.pass
 
   artifacts:
     paths:
