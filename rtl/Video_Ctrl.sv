@@ -80,9 +80,14 @@ always @ (posedge clk_i) begin
     line_no <= '0;
   end else begin
     if (fb_en_i) begin
-      rgb_o <= {line_read_data[15:11], line_read_data[15:13], // r
-                line_read_data[10:5], line_read_data[10:9],   // g
-                line_read_data[4:0], line_read_data[2:0]};    // b
+      if (line_no < DISPLAY_H) begin
+        rgb_o <= {line_read_data[15:11], line_read_data[15:13], // r
+                  line_read_data[10:5], line_read_data[10:9],   // g
+                  line_read_data[4:0], line_read_data[2:0]};    // b
+      end else begin
+        // TODO: use configured background color, etc.
+        rgb_o <= 24'h000000;
+      end
     end else begin
       rgb_o <= 24'hFF00FF;
     end
