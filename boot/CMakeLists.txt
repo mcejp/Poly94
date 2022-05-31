@@ -8,6 +8,8 @@ project(Poly94_boot ASM C)
 function(target_postprocess TARGET)
     target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../sdk/include)
 
+    target_link_options(${TARGET} PRIVATE "-Wl,-Map=$<TARGET_FILE:${TARGET}>.map")
+
     add_custom_command(TARGET ${TARGET} POST_BUILD
             COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${TARGET}> ${TARGET}.bin
             COMMAND hexdump -v -e "1/4 \\\"%08x\\\\n\\\"" ${TARGET}.bin > ${TARGET}.vh
