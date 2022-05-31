@@ -4,4 +4,4 @@
 
 _boot:
 	la x2, __stack
-	j bootldr
+	j main

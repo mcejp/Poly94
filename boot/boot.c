@@ -81,7 +81,7 @@ void UART_Echo(void) {
     }
 }
 
-void bootldr() {
+int main() {
     // TRACE_REG = 'H';
     // TRACE_REG = 'e';
     // TRACE_REG = 'l';
