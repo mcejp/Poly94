@@ -41,7 +41,7 @@ td.error { background-color: rgb(220, 53, 69); color: #fff; font-weight: 600 }
 td.success { background-color: rgb(25, 135, 84); color: #fff; font-weight: 600 }
 </style>
 
-{% set RESOURCES = ["EHXPLLL", "MULT18X18D", "TRELLIS_COMB", "TRELLIS_FF", "TRELLIS_RAMW"] %}
+{% set RESOURCES = ["DP16KD", "EHXPLLL", "MULT18X18D", "TRELLIS_COMB", "TRELLIS_FF", "TRELLIS_RAMW"] %}
 
 <table class="builds">
   <thead>
@@ -110,7 +110,7 @@ td.success { background-color: rgb(25, 135, 84); color: #fff; font-weight: 600 }
       <td>
         {% set result = (build.build.utilization | default({}))[res] %}
         {% if result %}
-        {{ result.used }}/{{ result.available }}
+        {{ result.used }}/{{ result.available }} {% if res == "DP16KD" %}<div>({{ result.used * 18 }} kbit)</div>{% endif %}
         {% endif %}
       </td>
       {% endfor %}
