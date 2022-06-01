@@ -11,6 +11,7 @@ typedef struct packed {
     logic blank_n;          // 1 if pixel visible, 0 if "blanked"
     logic end_of_line;      // strobed just after a line has been fully scanned out
     logic end_of_frame;     // strobed just after a frame has been fully scanned out, simultaneously with end_of_line_o
+    logic valid;
 } VGA_Timing;
 
 `endif

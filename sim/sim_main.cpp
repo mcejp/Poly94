@@ -50,7 +50,7 @@ int main(int argc, char** argv, char** env) {
    std::stringstream uart_line;
 
    Vtop top;
-   top.clk_25mhz = 0;
+   top.top->clk_sys = 0;
    // top.rootp->cpu.resetn = 0;
 
    VerilatedVcdC trace;
@@ -76,7 +76,7 @@ int main(int argc, char** argv, char** env) {
       // if (i > 10) {
       //    top.rootp->cpu.resetn = 1;
       // }
-      top.clk_25mhz = !top.clk_25mhz;
+      top.clk_sys = !top.clk_sys;
       top.eval();
       trace.dump((uint64_t)10 * half_cycle);
 
@@ -91,7 +91,7 @@ int main(int argc, char** argv, char** env) {
       top.sdram_d = (top.top->sdr_dq_oe) ? top.top->sdr_d : (vluint16_t)sdram_q;
 
       // UART
-      if (top.clk_25mhz && !top.top->uart_tx_busy && top.top->uart_tx_strobe) {
+      if (top.clk_sys && !top.top->uart_tx_busy && top.top->uart_tx_strobe) {
          char c = top.top->uart_tx_data;
 
          if (c == '\n') {         
@@ -103,7 +103,7 @@ int main(int argc, char** argv, char** env) {
          }
       }
 
-      if (top.clk_25mhz && (top.top->timing1 & (1<<2))) {
+      if (top.clk_sys && top.top->pixel_valid) {
          if (pixel_i >= 640 * 480) {
                // printf("%9ld testbench: begin new frame\n", half_cycle / 2);
                pixel_i = 0;

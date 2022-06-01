@@ -3,7 +3,12 @@
 
 module top
 (
+`ifndef SYNTHESIS
+    input clk_sys,
+`else
     input clk_25mhz,
+`endif
+
     output [3:0] gpdi_dp,//, gpdi_dn,
     output [7:0] led,
 
@@ -24,18 +29,20 @@ module top
 );
     // assign wifi_gpio0 = 1'b1;
 
-    parameter CLK_SYS_HZ = 25_000_000;
+    parameter CLK_SYS_HZ = 50_000_000;
 
     // begin PLL
 `ifndef SYNTHESIS
-    wire clk_sys = clk_25mhz;
-    assign sdram_clk = clk_25mhz;
+    // in sim, clk_sys is driven and clk_25mhz is ignored
+    assign sdram_clk = clk_sys;
+
+    wire pixel_valid /* verilator public */ = timing1.blank_n == 1 && timing1.valid;
 `else
     wire locked;
     wire [3:0] clocks;
     ecp5pll
     #(
-        .in_hz(  CLK_SYS_HZ),
+        .in_hz(  25_000_000),
         .out0_hz(CLK_SYS_HZ),
         .out1_hz(CLK_SYS_HZ), .out1_deg(90) // phase shifted for SDRAM chip
     )
@@ -92,35 +99,35 @@ module top
 
     wire VGA_Timing timing0;
     wire VGA_Timing timing1         /* verilator public */;
-    wire hsync_n1, vsync_n1, blank_n1, end_of_line1, end_of_frame1;
+    // wire hsync_n1, vsync_n1, blank_n1, end_of_line1, end_of_frame1;
     wire hsync_n2, vsync_n2, blank_n2, end_of_line2, end_of_frame2;
 
-    wire [23:0] color1, color2      /* verilator public */;
+    wire [23:0] /*color1,*/ color2      /* verilator public */;
     reg[23:0] bg_col;
 
-    VGA_Timing_Generator vgatm(
+    VGA_Timing_Generator #(.CLK_DIV(2)) vgatm(
         .clk_i(clk_sys),
         .rst_i(~reset_n),       // no HW POR on ulx3s?
 
         .timing_o(timing0)
     );
 
-    RGB_Color_Bars_Generator tpg(
-        .clk_i(clk_sys),
+    // RGB_Color_Bars_Generator tpg(
+    //     .clk_i(clk_sys),
     
-        .visible_i(timing0.blank_n),
-        .end_of_frame_i(timing0.end_of_frame),
-        .end_of_line_i(timing0.end_of_line),
-        .hsync_n_i(timing0.hsync_n),
-        .vsync_n_i(timing0.vsync_n),
+    //     .visible_i(timing0.blank_n),
+    //     .end_of_frame_i(timing0.end_of_frame),
+    //     .end_of_line_i(timing0.end_of_line),
+    //     .hsync_n_i(timing0.hsync_n),
+    //     .vsync_n_i(timing0.vsync_n),
 
-        .end_of_frame_o(end_of_frame1),
-        .end_of_line_o(end_of_line1),
-        .hsync_n_o(hsync_n1),
-        .vsync_n_o(vsync_n1),
-        .visible_o(blank_n1),
-        .rgb_o(color1)
-    );
+    //     .end_of_frame_o(end_of_frame1),
+    //     .end_of_line_o(end_of_line1),
+    //     .hsync_n_o(hsync_n1),
+    //     .vsync_n_o(vsync_n1),
+    //     .visible_o(blank_n1),
+    //     .rgb_o(color1)
+    // );
 
     // Text_Generator tg(
     //     .clk_i(clk_sys),
@@ -172,7 +179,7 @@ module top
 `ifdef SYNTHESIS
     hdmi_video hdmi_video
     (
-        .clk_25mhz(clk_sys),
+        .clk_25mhz(clk_25mhz),
 
         .hsync_n_i(timing1.hsync_n),
         .vsync_n_i(timing1.vsync_n),
@@ -466,4 +473,15 @@ module top
     // assign led[6] = (mem_state != STATE_SDRAM_WAIT);
     // assign led[7] = (mem_state == STATE_SDRAM_WAIT);
     assign led = uart_tx_data;
+
+// Not sure where else to put this
+`ifdef COCOTB_SIM
+initial begin
+  $dumpfile ("cocotb_sim.vcd");
+  $dumpvars (0, clk_sys);
+  $dumpvars (1, timing1);
+  #1;
+end
+`endif
+
 endmodule

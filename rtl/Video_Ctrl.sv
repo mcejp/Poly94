@@ -108,7 +108,7 @@ always @ (posedge clk_i) begin
         sdram_rd <= 1'b1;
         waitstate <= 3;
       end
-    end else if (timing_i.blank_n) begin
+    end else if (timing_i.valid && timing_i.blank_n == '1) begin
       // visible pixel
       line_read_ptr <= line_read_ptr + 1'b1;
     end
@@ -150,3 +150,5 @@ always @ (posedge clk_i) begin
 end
 
 endmodule
+
+`undef VERBOSE

@@ -1,7 +1,7 @@
 `default_nettype none
 
 module top_sim(
-    input clk_25mhz
+    input clk_sys
 );
 
 wire sdram_csn;
@@ -18,7 +18,7 @@ wire[15:0] sdram_d;
 wire ftdi_rxd;
 
 top top_inst(
-    .clk_25mhz,
+    .clk_sys,
 
     .sdram_csn,
     .sdram_clk,
@@ -46,14 +46,5 @@ mt48lc16m16a2 mt48lc16m16a2_inst(
     .We_n(sdram_wen),
     .Dqm(sdram_dqm)
 );
-
-`ifdef COCOTB_SIM
-initial begin
-  $dumpfile ("ftdi_rxd.vcd");
-  $dumpvars (0, clk_25mhz);
-  $dumpvars (1, ftdi_rxd);
-  #1;
-end
-`endif
 
 endmodule

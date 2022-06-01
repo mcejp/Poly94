@@ -12,7 +12,9 @@
 `default_nettype none
 `include "VGA_Timing.sv"
 
-module VGA_Timing_Generator(
+module VGA_Timing_Generator #(
+    CLK_DIV
+)(
     clk_i,
     rst_i,
 
@@ -36,6 +38,10 @@ localparam V_FRONT_PORCH = 10;
 localparam V_BACK_PORCH = 31;
 localparam V_TOTAL = V_VISIBLE + V_FRONT_PORCH + 2 + V_BACK_PORCH;
 
+// Clock divider; probably should be externalized
+logic[$clog2(CLK_DIV)-1:0] prescaler;
+logic clk_en;       // pipelined to minimize extra cost
+
 // Line/pixel counting
 
 // line in frame
@@ -50,6 +56,23 @@ reg[$clog2(H_TOTAL)-1:0] next_i;
 // are we in picture area? (vertically)
 reg is_picture_line;
 
+// Clock prescaling logic
+
+always_ff @ (posedge clk_i) begin
+    if (rst_i) begin
+        prescaler <= '0;
+        clk_en <= '0;
+    end else begin
+        if (prescaler == '0) begin
+            prescaler <= CLK_DIV - 1;
+            clk_en <= '1;
+        end else begin
+            prescaler <= prescaler - 1;
+            clk_en <= '0;
+        end
+    end
+end
+
 always @ (posedge clk_i) begin
     if (rst_i) begin
         scanline <= 0;
@@ -57,7 +80,7 @@ always @ (posedge clk_i) begin
         i <= 0;
         next_i <= 0;
         is_picture_line <= 1'b0;
-    end else begin
+    end else if (clk_en) begin
         if (next_i == 0) begin
             // end of line. handle here everything that should be handled synchronously with EOL (F, V flags)
 
@@ -99,7 +122,7 @@ always @ (posedge clk_i) begin
     if (rst_i) begin
         timing_o.hsync_n <= 1'b1;
         timing_o.vsync_n <= 1'b1;
-    end else begin
+    end else if (clk_en) begin
         // TODO: explore the most efficient way to implement these
 
         if (next_i == H_SYNC_BEGIN) begin
@@ -125,7 +148,7 @@ end
 // Generate End-of-Line output
 
 always @ (posedge clk_i) begin
-    if (is_picture_line && next_i == H_VISIBLE) begin
+    if (clk_en && is_picture_line && next_i == H_VISIBLE) begin
         timing_o.end_of_line <= 1'b1;
     end else begin
         timing_o.end_of_line <= 1'b0;
@@ -136,10 +159,20 @@ end
 
 always @ (posedge clk_i) begin
     // just after the last pixel of last visible scanline
-    if (is_picture_line && next_i == H_VISIBLE && next_scanline == V_VISIBLE - 1) begin
+    if (clk_en && is_picture_line && next_i == H_VISIBLE && next_scanline == V_VISIBLE - 1) begin
         timing_o.end_of_frame <= 1'b1;
     end else begin
         timing_o.end_of_frame <= 1'b0;
+    end
+end
+
+//
+
+always_ff @ (posedge clk_i) begin
+    if (rst_i) begin
+        timing_o.valid <= '0;
+    end else begin
+        timing_o.valid <= clk_en;
     end
 end
 

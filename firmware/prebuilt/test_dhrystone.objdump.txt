@@ -528,10 +528,10 @@ Disassembly of section .text:
  4000424:	04012537          	lui	a0,0x4012
  4000428:	cfc50513          	addi	a0,a0,-772 # 4011cfc <_exit+0x78>
  400042c:	d85ff0ef          	jal	ra,40001b0 <debug_printf>
- 4000430:	017d8637          	lui	a2,0x17d8
+ 4000430:	02faf637          	lui	a2,0x2faf
  4000434:	040125b7          	lui	a1,0x4012
  4000438:	04012537          	lui	a0,0x4012
- 400043c:	84060613          	addi	a2,a2,-1984 # 17d7840 <_boot-0x28287c0>
+ 400043c:	08060613          	addi	a2,a2,128 # 2faf080 <_boot-0x1050f80>
  4000440:	d5858593          	addi	a1,a1,-680 # 4011d58 <_exit+0xd4>
  4000444:	d6450513          	addi	a0,a0,-668 # 4011d64 <_exit+0xe0>
  4000448:	d69ff0ef          	jal	ra,40001b0 <debug_printf>
@@ -807,10 +807,10 @@ Disassembly of section .text:
  4000880:	f54a0513          	addi	a0,s4,-172
  4000884:	92dff0ef          	jal	ra,40001b0 <debug_printf>
  4000888:	000ba603          	lw	a2,0(s7)
- 400088c:	01900793          	li	a5,25
- 4000890:	017d8537          	lui	a0,0x17d8
+ 400088c:	03200793          	li	a5,50
+ 4000890:	02faf537          	lui	a0,0x2faf
  4000894:	03364933          	div	s2,a2,s3
- 4000898:	84050513          	addi	a0,a0,-1984 # 17d7840 <_boot-0x28287c0>
+ 4000898:	08050513          	addi	a0,a0,128 # 2faf080 <_boot-0x1050f80>
  400089c:	41f65693          	srai	a3,a2,0x1f
  40008a0:	02f94933          	div	s2,s2,a5
  40008a4:	040167b7          	lui	a5,0x4016

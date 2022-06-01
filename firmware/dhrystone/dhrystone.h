@@ -382,7 +382,7 @@ extern clock_t	clock();
 #elif defined(__riscv)
 #include <Poly94_hw.h>
 
-#define HZ 25000000
+#define HZ 50000000
 #define Too_Small_Time 1
 #define CLOCK_TYPE "rdcycle()"
 #define Start_Timer() Begin_Time = read_csr(cycle)
