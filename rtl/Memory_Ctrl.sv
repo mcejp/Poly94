@@ -86,9 +86,9 @@ enum { PURPOSE_I, PURPOSE_D } mem_purpose;
 
 reg reading_bootrom;
 
-always @ (*) begin
+always_comb begin
     // ready must go down in 0 clocks, otherwise we will be flooded with further requests
-    cpu_dBus_cmd_ready <= (mem_state == STATE_IDLE);
+    cpu_dBus_cmd_ready = (mem_state == STATE_IDLE);
 end
 
 always @ (posedge clk_i) begin
