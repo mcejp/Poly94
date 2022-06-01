@@ -1,6 +1,3 @@
-# cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -S boot -B boot/build
-# cmake --build boot/build
-
 cmake_minimum_required(VERSION 3.16)
 
 project(Poly94_boot ASM C)

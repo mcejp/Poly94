@@ -26,13 +26,12 @@ build_ulx3s:
   needs: []
 
   script:
-    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -S boot -B boot/build
-    - cmake --build boot/build --target boot
+    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -S firmware -B firmware/build
+    - cmake --build firmware/build --target boot
     - make ulx3s.bit
 
   artifacts:
     paths:
-      - boot/boot.elf
       - build/nextpnr-report.json
       - ulx3s.bit
       - "*.log"
@@ -44,14 +43,13 @@ test_cocotb:
   needs: []
 
   script:
-    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -S boot -B boot/build
-    - cmake --build boot/build --target boot
+    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -S firmware -B firmware/build
+    - cmake --build firmware/build --target boot
     - make -f Makefile.coco
     - "! grep -q '<failure' results.xml"
 
   artifacts:
     paths:
-      - boot/boot.elf
       - "*.vcd"
       - "results.xml"
     when: always
@@ -64,11 +62,11 @@ test_verilator:
   needs: []
 
   script:
-    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -S boot -B boot/build
-    - cmake --build boot/build --target boot_sdram test_dhrystone test_framebuffer
-    - BOOTROM=boot/build/test_framebuffer.bin DUMP_FRAMEBUF=framebuffer.ppm NUM_CYCLES=4000000 make sim
+    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -S firmware -B firmware/build
+    - cmake --build firmware/build --target boot_sdram test_dhrystone test_framebuffer
+    - BOOTROM=firmware/build/test_framebuffer.bin DUMP_FRAMEBUF=framebuffer.ppm NUM_CYCLES=4000000 make sim
     - if ! cmp -s framebuffer.ppm test_expected/test_framebuffer.ppm; then echo "Output not equal to expectation"; touch verilator.fail; exit 1; fi
-    - BOOTROM=boot/build/boot_sdram.bin NUM_CYCLES=3000000 SDRAM_PRELOAD=boot/build/test_dhrystone.bin make sim | tee sim.log
+    - BOOTROM=firmware/build/boot_sdram.bin NUM_CYCLES=3000000 SDRAM_PRELOAD=firmware/build/test_dhrystone.bin make sim | tee sim.log
     - sed -Ez 's/.*Dhrystones per Second:\s*([0-9]+).*/\1/g' sim.log > dhrystones_per_second
     - touch verilator.pass
 
