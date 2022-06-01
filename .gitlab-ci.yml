@@ -55,6 +55,8 @@ test_cocotb:
       - "*.vcd"
       - "results.xml"
     when: always
+    reports:
+      junit: results.xml
 
 
 test_verilator:
