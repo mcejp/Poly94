@@ -72,7 +72,7 @@ except FileNotFoundError:
 
 # Benchmark
 
-CPU_MHZ = 25
+CPU_MHZ = 50
 
 try:
     with open("dhrystones_per_second", "rt") as f:
