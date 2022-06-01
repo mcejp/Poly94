@@ -1,3 +1,8 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Poly94 builds</title>
+
 <style>
 /* color scheme from Bootstrap v5 */
 body {
@@ -40,7 +45,9 @@ table.device-detail>tbody>tr:last-child>td {
 td.error { background-color: rgb(220, 53, 69); color: #fff; font-weight: 600 }
 td.success { background-color: rgb(25, 135, 84); color: #fff; font-weight: 600 }
 </style>
+</head>
 
+<body>
 {% set RESOURCES = ["DP16KD", "EHXPLLL", "MULT18X18D", "TRELLIS_COMB", "TRELLIS_FF", "TRELLIS_RAMW"] %}
 
 <table class="builds">
@@ -122,3 +129,6 @@ td.success { background-color: rgb(25, 135, 84); color: #fff; font-weight: 600 }
     {% endfor %}
   </tbody>
 </table>
+
+</body>
+</html>
