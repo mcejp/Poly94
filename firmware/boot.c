@@ -118,11 +118,22 @@ int main() {
         break;
     }
 
-    for (int y = 0; y < 480; y++) {
-        for (int x = 0; x < 640; x++) {
-            framebuf_sdram_x16[y * 640 + x] = y + x;
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+    uint32_t start = rdcyclel();
+
+    for (int y = 0; y < 240; y++) {
+        for (int x = 0; x < 320; x++) {
+            int r = 16 + (x / 8) * 16 / 40;
+            int g = 32 + MIN(x, y) / 8 * 16 / 30;
+            int b = 16 + (y / 8) * 16 / 30;
+            framebuf_sdram_x16[y * 320 + x] = (r << 11) | (g << 5) | b;
         }
     }
+
+    uint32_t end = rdcyclel();
+    Puth(end - start);
+    Puts(" cycles to fill framebuffer.\n");
 
     VIDEO_CTRL = VIDEO_CTRL_FB_EN;      // bug: enabling fb_en in the middle of the frame leaves it with wrong SDRAM read ptr
 
