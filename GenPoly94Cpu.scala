@@ -89,6 +89,8 @@ object GenPoly94Cpu extends App{
           pessimisticWriteRegFile = false,
           pessimisticAddressMatch = false
         ),
+        new MulPlugin,
+        new DivPlugin,
         new BranchPlugin(
           earlyBranch = false,
           catchAddressMisaligned = false
