@@ -63,10 +63,10 @@ test_verilator:
 
   script:
     - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DCMAKE_BUILD_TYPE=MinSizeRel -S firmware -B firmware/build
-    - cmake --build firmware/build --target boot_sdram test_dhrystone test_framebuffer
+    - cmake --build firmware/build --target boot_sdram test_framebuffer
     - BOOTROM=firmware/build/test_framebuffer.bin DUMP_FRAMEBUF=framebuffer.ppm NUM_CYCLES=4000000 make sim
     - if ! cmp -s framebuffer.ppm test_expected/test_framebuffer.ppm; then echo "Output not equal to expectation"; touch verilator.fail; exit 1; fi
-    - BOOTROM=firmware/build/boot_sdram.bin NUM_CYCLES=3000000 SDRAM_PRELOAD=firmware/build/test_dhrystone.bin make sim | tee sim.log
+    - BOOTROM=firmware/build/boot_sdram.bin NUM_CYCLES=3000000 SDRAM_PRELOAD=firmware/prebuilt/test_dhrystone.bin make sim | tee sim.log
     - sed -Ez 's/.*Dhrystones per Second:\s*([0-9]+).*/\1/g' sim.log > dhrystones_per_second
     - touch verilator.pass
 
