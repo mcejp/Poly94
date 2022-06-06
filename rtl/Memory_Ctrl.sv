@@ -7,6 +7,8 @@
 
 // `define VERBOSE_MEMCTL
 
+`include "memory_map.sv"
+
 module Memory_Ctrl(
   input             clk_i,
   input             rst_i,
@@ -67,9 +69,9 @@ localparam CMD_SIZE_32BIT = 2'd2;
 // keep number of top-level states to a minimum so that high-fanout expressions like 'io_write_valid_o' are simple
 enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_BURST_READ_BOOTROM, STATE_SDRAM_ACK, STATE_IO_READ } mem_state;
 
-wire is_io_addr =         (cpu_dBus_cmd_payload_address[26:24] == 4'h1);
-wire dBus_is_sdram_addr = (cpu_dBus_cmd_payload_address[26] == 1'b1);
-wire iBus_is_sdram_addr = (cpu_iBus_cmd_payload_address[26] == 1'b1);
+wire is_io_addr =           addr_is_csr(cpu_dBus_cmd_payload_address);
+wire dBus_is_sdram_addr =   addr_is_sdram(cpu_dBus_cmd_payload_address);
+wire iBus_is_sdram_addr =   addr_is_sdram(cpu_iBus_cmd_payload_address);
 assign io_read_valid_o = (mem_state == STATE_IDLE && cpu_dBus_cmd_valid && is_io_addr && !cpu_dBus_cmd_payload_wr);
 assign io_write_valid_o = (mem_state == STATE_IDLE && cpu_dBus_cmd_valid && is_io_addr && cpu_dBus_cmd_payload_wr);
 
