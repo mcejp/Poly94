@@ -887,13 +887,13 @@ Disassembly of section .text:
  40009b8:	810006b7          	lui	a3,0x81000
  40009bc:	00a7c463          	blt	a5,a0,40009c4 <_write+0x14>
  40009c0:	00008067          	ret
- 40009c4:	0006a703          	lw	a4,0(a3) # 81000000 <__stack+0x7b000000>
+ 40009c4:	0106a703          	lw	a4,16(a3) # 81000010 <__stack+0x7b000010>
  40009c8:	00177713          	andi	a4,a4,1
  40009cc:	fe071ce3          	bnez	a4,40009c4 <_write+0x14>
  40009d0:	00f58733          	add	a4,a1,a5
  40009d4:	00074703          	lbu	a4,0(a4)
  40009d8:	00178793          	addi	a5,a5,1
- 40009dc:	00e6a023          	sw	a4,0(a3)
+ 40009dc:	00e6aa23          	sw	a4,20(a3)
  40009e0:	fddff06f          	j	40009bc <_write+0xc>
 
 040009e4 <__divdi3>:
