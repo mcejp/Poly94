@@ -19,7 +19,7 @@ static const char message[] = "Hello world from SDRAM!\r\n";
 #define MSG_LEN (sizeof(message) - 1)
 
 static int Getc(void) {
-    while (!(TRACE_REG & UART_RX_NOT_EMPTY)) {
+    while (!(UART_STATUS & UART_STATUS_RX_NOT_EMPTY)) {
     }
 
     return UART_DATA;
@@ -27,10 +27,10 @@ static int Getc(void) {
 
 static void Putc(char c) {
     // wait while UART busy
-    while (TRACE_REG & UART_TX_BUSY) {
+    while (UART_STATUS & UART_STATUS_TX_BUSY) {
     }
 
-    TRACE_REG = c;
+    UART_DATA = c;
 }
 
 static const char hex[] = "0123456789ABCDEF";
@@ -167,7 +167,7 @@ int main() {
             __asm__ volatile ("fence.i");
 
             // wait while UART busy
-            while (TRACE_REG & UART_TX_BUSY) {
+            while (UART_STATUS & UART_STATUS_TX_BUSY) {
             }
 
             ((void (*)())(INIT_ADDR))();

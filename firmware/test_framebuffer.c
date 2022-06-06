@@ -17,7 +17,7 @@ int main() {
         for (int y = 0; y < 240; y++) {
             for (int x = 0; x < 320; x++) {
                 sdram_x8[y * 320 + x] = y + x;
-                TRACE_REG;
+                UART_STATUS;
             }
         }
     }

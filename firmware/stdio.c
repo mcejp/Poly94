@@ -6,10 +6,10 @@
 int _write(int handle, char const* data, int size) {
     for (int count = 0; count < size; count++) {
         // wait while UART busy
-        while (TRACE_REG & 1) {
+        while (UART_STATUS & UART_STATUS_TX_BUSY) {
         }
 
-        TRACE_REG = data[count];
+        UART_DATA = data[count];
     }
 
     return size;

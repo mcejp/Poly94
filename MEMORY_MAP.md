@@ -35,8 +35,7 @@ CPU external address bus is effectively 28 bits wide.
 
 ### System control registers
 
-0x8100_0000  TRACE_REG
-  - write to send on UART (8 bits)
+0x8100_0000  UART_STATUS
   - read to see:
     - if UART busy (1) or idle (0)
     - Rx data ready (2) or no data
@@ -46,6 +45,7 @@ CPU external address bus is effectively 28 bits wide.
 
 0x8100_0008  UART_DATA
   - read to get byte from UART Rx buffer
+  - write to send on UART (8 bits)
 
 
 ---
