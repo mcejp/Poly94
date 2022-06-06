@@ -414,15 +414,17 @@ always @ (posedge clk_i, posedge rst_i) begin
     end
 end
 
+reg[15:0] sdram_rdata_low;
 reg[31:0] cpu_rdata;
 
 always_ff @ (posedge clk_i, posedge rst_i) begin
     if (rst_i) begin
+        sdram_rdata_low <= '0;
         cpu_rdata <= '0;
     end else begin
         // TOOD: how to give hint that all ifs exclusive?
 
-        // cpu_rdata <= 'x;        // data read response is a single-cycle strobe
+        cpu_rdata <= 'x;        // data read response only matters during a single-cycle strobe
 
         if (csr_ack_i) begin
             cpu_rdata <= csr_dat_i;
@@ -436,13 +438,13 @@ always_ff @ (posedge clk_i, posedge rst_i) begin
             // This hellish expression could surely be simplified
             if (waitstate_counter >= 2 && !(sdram_addr_x16[0] == 0 && sdram_ack == 1) && sdram_rdy && !mem_is_wr) begin
                 if (sdram_addr_x16[0] == 0 && sdram_ack == 0) begin
-                    cpu_rdata[15:0] <= sdram_rdata;
+                    sdram_rdata_low <= sdram_rdata;
                 end else if (sdram_addr_x16[0] == 1) begin
 `ifdef VERBOSE_MEMCTL
-                    $display("  finished 32-bit SDRAM read [%08X] => %08X", mem_addr, {sdram_rdata, cpu_rdata[15:0]});
+                    $display("  finished 32-bit SDRAM read [%08X] => %08X", mem_addr, {sdram_rdata, sdram_rdata_low});
 `endif
 
-                    cpu_rdata[31:16] <= sdram_rdata;
+                    cpu_rdata <= {sdram_rdata, sdram_rdata_low};
                 end
             end
         end
