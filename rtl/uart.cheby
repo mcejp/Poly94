@@ -22,7 +22,7 @@ memory-map:
       name: DATA
       access: rw
       width: 32
-      x-hdl: {type: wire, write-strobe: true}
+      x-hdl: {type: wire, read-strobe: true, write-strobe: true}
       children:
       - field:
           name: DATA

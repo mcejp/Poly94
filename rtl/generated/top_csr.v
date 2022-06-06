@@ -29,6 +29,7 @@ module top_csr
     input   wire [7:0] UART_DATA_DATA_i,
     output  wire [7:0] UART_DATA_DATA_o,
     output  wire UART_DATA_wr_o,
+    output  reg UART_DATA_rd_o,
 
     // Control register
     // Write 1 to enable framebuffer display.
@@ -198,6 +199,7 @@ module top_csr
       begin
         // By default ack read requests
         rd_dat_d0 <= {32{1'bx}};
+        UART_DATA_rd_o <= 1'b0;
         case (wb_adr_i[5:2])
         4'b0100:
           begin
@@ -210,6 +212,7 @@ module top_csr
         4'b0101:
           begin
             // Reg UART_DATA
+            UART_DATA_rd_o <= rd_req_int;
             rd_ack_d0 <= rd_req_int;
             rd_dat_d0[7:0] <= UART_DATA_DATA_i;
             rd_dat_d0[31:8] <= 24'b0;

@@ -401,6 +401,7 @@ module top
         .UART_DATA_DATA_i(uart_rx_data),
         .UART_DATA_DATA_o(uart_tx_data),
         .UART_DATA_wr_o(uart_tx_strobe),
+        .UART_DATA_rd_o(uart_rx_strobe),
 
         .VIDEO_CTRL_FB_EN_o(video_fb_en),
 
