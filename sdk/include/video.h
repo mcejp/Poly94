@@ -16,7 +16,7 @@
 #define VIDEO_BG_COLOR_B_SHIFT 0
 
 struct video {
-  /* [0x0]: REG (wo) Control register */
+  /* [0x0]: REG (rw) Control register */
   uint32_t CTRL;
 
   /* [0x4]: REG (rw) Display background color in RGB888 format */

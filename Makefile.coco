@@ -22,6 +22,7 @@ VERILOG_SOURCES += \
 		rtl/top.sv \
 		rtl/VGA_Timing_Generator.sv \
 		rtl/Video_Ctrl.sv \
+		rtl/generated/top_csr.v \
 		rtl/generated/VexRiscv.v \
 		rtl/ip/sdram_pnru.v \
 		rtl/model/mt48lc16m16a2.v \

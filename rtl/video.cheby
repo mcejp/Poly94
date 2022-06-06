@@ -1,5 +1,5 @@
 memory-map:
-  bus: wb-32-be
+  word-endian: little
   name: video
 
   children:
@@ -7,7 +7,7 @@ memory-map:
       name: CTRL
       description: Control register
 
-      access: wo
+      access: rw
       width: 32
       children:
       - field:

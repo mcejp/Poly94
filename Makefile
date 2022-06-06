@@ -97,6 +97,7 @@ poly94.json: poly94.ys \
 		rtl/vga2dvid.v \
 		rtl/Video_Ctrl.sv \
 		rtl/ecp5/ecp5pll.sv \
+		rtl/generated/top_csr.v \
 		rtl/generated/VexRiscv.v \
 		rtl/ip/sdram_pnru.v \
 		build/boot_syn.vh

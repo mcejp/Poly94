@@ -1,7 +1,8 @@
 memory-map:
-  bus: wb-32-be
+  word-endian: little
   name: uart
   description: Universal asynchronous receiver/transmitter
+
   children:
   - reg:
       name: STATUS
@@ -16,10 +17,12 @@ memory-map:
           name: RX_NOT_EMPTY
           range: 1
           description: Indicates whether the receive FIFO (currently single-element) contains data received
+
   - reg:
       name: DATA
       access: rw
       width: 32
+      x-hdl: {type: wire, write-strobe: true}
       children:
       - field:
           name: DATA

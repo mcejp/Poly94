@@ -1,10 +1,11 @@
 memory-map:
-  bus: wb-32-be
+  bus: wb-32
+  word-endian: little
   name: top
   description: Poly94 control/status registers
 
   x-hdl:
-    name-suffix: _regs
+    name-suffix: _csr
 
   children:
   - submap:

@@ -31,6 +31,16 @@ module Memory_Ctrl(
   output reg        cpu_iBus_rsp_valid,
   output[31:0]      cpu_iBus_rsp_payload_data,
 
+  // CSR
+  output reg        csr_cyc_o,
+  output reg        csr_stb_o,
+  output reg [5:2]  csr_adr_o,
+  output reg        csr_we_o,
+  output reg [31:0] csr_dat_o,
+  input  wire       csr_ack_i,
+  input  wire       csr_stall_i,
+  input  wire[31:0] csr_dat_i,
+
   // SDRAM
   output reg        sdram_rd,           // not strobe -- keep up until ACK (TODO verify)
   output reg        sdram_wr,
@@ -42,15 +52,7 @@ module Memory_Ctrl(
   output reg[1:0]   sdram_wmask,
 
   output[31:0]      addr_o,             // applies to Boot ROM (only?)
-  input[31:0]       bootrom_data_i,
-
-  // these change in 0 cycles from the CPU request
-  // (probably unnecessary & should be pipelined & folded into addr_o)
-  output            io_read_valid_o,
-  output            io_write_valid_o,
-  output[31:0]      io_addr_o,
-  input[31:0]       io_rdata_i,
-  output[31:0]      io_wdata_o
+  input[31:0]       bootrom_data_i
 );
 
 // Read data multiplex
@@ -58,7 +60,7 @@ module Memory_Ctrl(
 
 reg[31:0] cpu_sdram_rdata;
 
-enum { MEM_BOOTROM, MEM_IO, MEM_SDRAM } cpu_mem_select;
+enum { MEM_BOOTROM, MEM_CSR, MEM_SDRAM } cpu_mem_select;
 
 //
 
@@ -67,13 +69,10 @@ localparam CMD_SIZE_16BIT = 2'd1;
 localparam CMD_SIZE_32BIT = 2'd2;
 
 // keep number of top-level states to a minimum so that high-fanout expressions like 'io_write_valid_o' are simple
-enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_BURST_READ_BOOTROM, STATE_SDRAM_ACK, STATE_IO_READ } mem_state;
+enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_BURST_READ_BOOTROM, STATE_SDRAM_ACK, STATE_CSR } mem_state;
 
-wire is_io_addr =           addr_is_csr(cpu_dBus_cmd_payload_address);
 wire dBus_is_sdram_addr =   addr_is_sdram(cpu_dBus_cmd_payload_address);
 wire iBus_is_sdram_addr =   addr_is_sdram(cpu_iBus_cmd_payload_address);
-assign io_read_valid_o = (mem_state == STATE_IDLE && cpu_dBus_cmd_valid && is_io_addr && !cpu_dBus_cmd_payload_wr);
-assign io_write_valid_o = (mem_state == STATE_IDLE && cpu_dBus_cmd_valid && is_io_addr && cpu_dBus_cmd_payload_wr);
 
 reg[1:0] waitstate_counter;
 reg[2:0] words_remaining;       // up to 7
@@ -134,7 +133,16 @@ always @ (posedge clk_i) begin
               mem_size <= cpu_dBus_cmd_payload_size;
               mem_wdata <= cpu_dBus_cmd_payload_data;
 
-              if (dBus_is_sdram_addr && cpu_dBus_cmd_payload_wr && cpu_dBus_cmd_payload_size == CMD_SIZE_32BIT) begin
+              if (addr_is_csr(cpu_dBus_cmd_payload_address)) begin
+                mem_state <= STATE_CSR;
+                cpu_mem_select <= MEM_CSR;
+
+`ifdef VERBOSE_MEMCTL
+                $display("begin CSR [%08Xh] is_wr=%d msk=%04b sz=%d wdata=%08X", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_wr, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size, cpu_dBus_cmd_payload_data);
+`endif
+
+                assert(cpu_dBus_cmd_payload_size == CMD_SIZE_32BIT);
+              end else if (dBus_is_sdram_addr && cpu_dBus_cmd_payload_wr && cpu_dBus_cmd_payload_size == CMD_SIZE_32BIT) begin
                 // 32-bit SDRAM write
 
 `ifdef VERBOSE_MEMCTL
@@ -195,14 +203,6 @@ always @ (posedge clk_i) begin
 
                     cpu_mem_select <= MEM_SDRAM;
                     mem_state <= STATE_SDRAM_WAIT;
-                end else if (is_io_addr && cpu_dBus_cmd_payload_size == CMD_SIZE_32BIT) begin
-`ifdef VERBOSE_MEMCTL
-                    $display("begin IO read [%08Xh] msk=%04b sz=%d", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
-`endif
-
-                    cpu_mem_select <= MEM_IO;
-
-                    mem_state <= STATE_IO_READ;
                 end else begin
                     // ROM read (or a futile attempt to write)
                     // ROM read finishes simultaneously and so will the setting of the RDATA mux
@@ -215,8 +215,6 @@ always @ (posedge clk_i) begin
 
                     mem_purpose <= PURPOSE_D;
                 end
-              end else if (is_io_addr && cpu_dBus_cmd_payload_wr && cpu_dBus_cmd_payload_size == CMD_SIZE_32BIT) begin
-                // 32-bit IO write. Handled elsewhere, do nothing.
               end else begin
                 $display("begin INVALID OP [%08Xh] is_wr=%d msk=%04b sz=%d", cpu_dBus_cmd_payload_address,
                     cpu_dBus_cmd_payload_wr, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
@@ -383,11 +381,13 @@ always @ (posedge clk_i) begin
             words_remaining <= words_remaining - 1;
         end
 
-        // This wait state is needed to break too tight write-read sequences to I/O regs.
-        // This could be solved in other ways as well.
-        STATE_IO_READ: begin
-            cpu_dBus_rsp_valid <= 1;
-            mem_state <= STATE_FINISHED;
+        STATE_CSR: begin
+            if (csr_ack_i) begin
+                // send response only if reading
+                cpu_dBus_rsp_valid <= !csr_we_o;
+
+                mem_state <= STATE_FINISHED;
+            end
         end
         endcase
     end
@@ -399,11 +399,48 @@ always @ (posedge clk_i) begin
     end
 end
 
-assign addr_o = mem_addr;
-assign io_addr_o = cpu_dBus_cmd_payload_address;
-assign io_wdata_o = cpu_dBus_cmd_payload_data;
+// indent: 4sp
+always @ (posedge clk_i, posedge rst_i) begin
+    if (rst_i) begin
+        csr_cyc_o <= '0;
+        csr_stb_o <= '0;
+        csr_adr_o <= '0;
+        csr_we_o <= '0;
+        csr_dat_o <= '0;
+    end else begin
+        if (mem_state == STATE_IDLE) begin
+            if (cpu_dBus_cmd_valid && addr_is_csr(cpu_dBus_cmd_payload_address)) begin
+                csr_cyc_o <= '1;
+                csr_stb_o <= '1;
+            end
 
-assign cpu_dBus_rsp_payload_data = cpu_mem_select == MEM_IO ? io_rdata_i :
+            // Slightly tricky, as csr_adr_o doesn't go down to 0.
+            csr_adr_o[$left(csr_adr_o):2] <= cpu_dBus_cmd_payload_address[$left(csr_adr_o):2];
+
+            csr_we_o <= cpu_dBus_cmd_payload_wr;
+            csr_dat_o <= cpu_dBus_cmd_payload_data;
+        end else if (mem_state == STATE_CSR) begin
+            if (!csr_stall_i) csr_stb_o <= '0;
+            if (csr_ack_i) csr_cyc_o <= '0;
+        end
+    end
+end
+
+reg[31:0] csr_read_data;
+
+always @ (posedge clk_i, posedge rst_i) begin
+    if (rst_i) begin
+        csr_read_data <= '0;
+    end else begin
+        if (csr_ack_i) begin
+            csr_read_data <= csr_dat_i;
+        end
+    end
+end
+
+assign addr_o = mem_addr;
+
+assign cpu_dBus_rsp_payload_data = cpu_mem_select == MEM_CSR ? csr_read_data :
                                cpu_mem_select == MEM_BOOTROM ? bootrom_data_i :
                                cpu_sdram_rdata;
 

@@ -1,7 +1,4 @@
 `default_nettype none
-`include "generated/top_inc.sv"
-`include "generated/uart_inc.sv"
-`include "generated/video_inc.sv"
 `include "VGA_Timing.sv"
 
 module top
@@ -95,10 +92,15 @@ module top
     wire[15:0]  video_sdram_rdata;
 
     wire[31:0]  mem_addr;                // TODO: trim down useless bits?
-    wire        mem_io_read_valid;
-    wire        mem_io_write_valid;
-    wire[31:0]  mem_io_addr;
-    wire[31:0]  mem_io_wdata;
+
+    logic       csr_cyc;
+    logic       csr_stb;
+    logic[5:2]  csr_adr;
+    logic       csr_we;
+    logic[31:0] csr_dat_i;
+    logic       csr_ack;
+    logic       csr_stall;
+    logic[31:0] csr_dat_o;
 
     wire VGA_Timing timing0;
     wire VGA_Timing timing1         /* verilator public */;
@@ -203,8 +205,8 @@ module top
     reg uart_rx_strobe;
     wire[7:0] uart_rx_data;
     wire uart_rx_valid;
-    reg uart_tx_strobe      /* verilator public */;
-    reg[7:0] uart_tx_data   /* verilator public */;
+    wire uart_tx_strobe     /* verilator public */;
+    wire[7:0] uart_tx_data  /* verilator public */;
     wire uart_tx_busy       /* verilator public */;
 
     reg reset_n = 1'b0;
@@ -396,6 +398,15 @@ module top
       .cpu_iBus_rsp_valid,
       .cpu_iBus_rsp_payload_data,
 
+      .csr_cyc_o(csr_cyc),
+      .csr_stb_o(csr_stb),
+      .csr_adr_o(csr_adr),
+      .csr_we_o(csr_we),
+      .csr_dat_o(csr_dat_i),
+      .csr_ack_i(csr_ack),
+      .csr_stall_i(csr_stall),
+      .csr_dat_i(csr_dat_o),
+
       .sdram_rd(cpu_sdram_rd),
       .sdram_wr(cpu_sdram_wr),
       .sdram_rdy(cpu_sdram_rdy),
@@ -406,68 +417,46 @@ module top
       .sdram_wmask(cpu_sdram_wmask),
 
       .addr_o(mem_addr),
-      .bootrom_data_i(bootrom_data),
+      .bootrom_data_i(bootrom_data)
+    );
 
-      .io_read_valid_o(mem_io_read_valid),
-      .io_write_valid_o(mem_io_write_valid),
-      .io_addr_o(mem_io_addr),
-      .io_rdata_i(mem_io_rdata),
-      .io_wdata_o(mem_io_wdata)
+    // Control/status registers
+
+    top_csr csr(
+        .rst_n_i(reset_n),
+        .clk_i(clk_sys),
+
+        .wb_cyc_i(csr_cyc),
+        .wb_stb_i(csr_stb),
+        .wb_adr_i(csr_adr),
+        .wb_sel_i(4'b1111),
+        .wb_we_i(csr_we),
+        .wb_dat_i(csr_dat_i),
+        .wb_ack_o(csr_ack),
+        .wb_err_o(),
+        .wb_rty_o(),
+        .wb_stall_o(csr_stall),
+        .wb_dat_o(csr_dat_o),
+
+        .UART_STATUS_TX_BUSY_i(uart_tx_busy),
+        .UART_STATUS_RX_NOT_EMPTY_i(uart_rx_valid),
+
+        .UART_DATA_DATA_i(uart_rx_data),
+        .UART_DATA_DATA_o(uart_tx_data),
+        .UART_DATA_wr_o(uart_tx_strobe),
+
+        .VIDEO_CTRL_FB_EN_o(video_fb_en),
+
+        .VIDEO_BG_COLOR_R_o(bg_col[23:16]),
+        .VIDEO_BG_COLOR_G_o(bg_col[15:8]),
+        .VIDEO_BG_COLOR_B_o(bg_col[7:0])
     );
 
     // System control
 
     always @ (posedge clk_sys) begin
-        uart_tx_strobe <= 1'b0;
-
-        if (!reset_n) begin
-            bg_col <= 0;
-            video_fb_en <= 1'b0;
-        end else begin
-            // TODO: waste to also compare lowest 2 bits. enough to tie to 0 to optimize out?
-
-            // write BG_COLOR
-            if (mem_io_write_valid && mem_io_addr[11:0] == top_regs_Consts::ADDR_TOP_VIDEO + video_Consts::ADDR_VIDEO_BG_COLOR) begin
-                $display("WRITE BG_COL %08X", mem_io_wdata);
-                if (mem_io_wdata != 0) begin
-                    bg_col <= mem_io_wdata;
-                    //col_data <= cpu_mem_wdata[7:0] | cpu_mem_wdata[15:8] | cpu_mem_wdata[23:16] | cpu_mem_wdata[31:24];
-                end
-            end
-
-            // read UART_DATA
-            if (mem_io_read_valid && mem_io_addr[11:0] == top_regs_Consts::ADDR_TOP_UART + uart_Consts::ADDR_UART_DATA) begin
-                $display("READ UART RX");
-                uart_rx_strobe <= 1'b1;
-            end else begin
-                uart_rx_strobe <= 1'b0;
-            end
-
-            // write UART_DATA
-            if (mem_io_write_valid && mem_io_addr[11:0] == top_regs_Consts::ADDR_TOP_UART + uart_Consts::ADDR_UART_DATA) begin
-                // $display("WRITE CHAR '%c'", mem_io_wdata[7:0]);
-
-                uart_tx_strobe <= 1;
-                uart_tx_data <= mem_io_wdata[7:0];
-            end
-
-            // write VIDEO CTRL
-            // TODO: this needs to be readable too
-            if (mem_io_write_valid && mem_io_addr[11:0] == top_regs_Consts::ADDR_TOP_VIDEO + video_Consts::ADDR_VIDEO_CTRL) begin
-                $display("WRITE VIDEO CTRL %08X", mem_io_wdata);
-                video_fb_en <= mem_io_wdata[0];
-            end
-
-            //
-            if (mem_io_addr[11:0] == top_regs_Consts::ADDR_TOP_UART + uart_Consts::ADDR_UART_STATUS) begin
-                // read UART_STATUS
-                mem_io_rdata <= {30'h00000000, uart_rx_valid, uart_tx_busy};
-            end else if (mem_io_addr[11:0] == top_regs_Consts::ADDR_TOP_UART + uart_Consts::ADDR_UART_DATA) begin
-                // read UART_DATA
-                mem_io_rdata <= {24'h0, uart_rx_data};
-            end else begin
-                mem_io_rdata <= 32'hxxxxxxxx;
-            end
+        if (uart_tx_strobe) begin
+            // $display("WRITE CHAR '%c'", uart_tx_data);
         end
     end
 
@@ -485,8 +474,9 @@ module top
 `ifdef COCOTB_SIM
 initial begin
   $dumpfile ("cocotb_sim.vcd");
-  $dumpvars (0, clk_sys);
-  $dumpvars (1, timing1);
+//   $dumpvars (0, clk_sys);
+//   $dumpvars (0, timing1);
+  $dumpvars (0, top);
   #1;
 end
 `endif
