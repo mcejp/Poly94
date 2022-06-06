@@ -83,7 +83,7 @@ int main(int argc, char** argv, char** env) {
       // Evaluate SDRAM C++ model
       vluint64_t sdram_q = 0;
       sdr->eval(half_cycle,
-                top.sdram_clk ^ 1, 1,
+                top.clk_sys ^ 1, 1,
                 top.sdram_csn,  top.sdram_rasn, top.sdram_casn, top.sdram_wen,
                 top.sdram_ba,   top.sdram_a,
                 top.sdram_dqm, (vluint64_t)top.top->sdr_d,  sdram_q);

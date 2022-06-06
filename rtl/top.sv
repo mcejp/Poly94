@@ -3,18 +3,12 @@
 
 module top
 (
-`ifndef SYNTHESIS
     input clk_sys,
-`else
-    input clk_25mhz,
-`endif
 
-    output [3:0] gpdi_dp,//, gpdi_dn,
     output [7:0] led,
 
     // SDRAM interface (For use with 16Mx16bit or 32Mx16bit SDR DRAM, depending on version)
     output sdram_csn,       // chip select
-    output sdram_clk,       // clock to SDRAM
     output sdram_cke,       // clock enable to SDRAM
     output sdram_rasn,      // SDRAM RAS
     output sdram_casn,      // SDRAM CAS
@@ -25,40 +19,20 @@ module top
     inout [15:0] sdram_d,   // data bus to/from SDRAM
 
     output ftdi_rxd,
-    input ftdi_txd
-);
-    // assign wifi_gpio0 = 1'b1;
+    input ftdi_txd,
 
+    output hsync_n_o,
+    output vsync_n_o,
+    output blank_n_o,
+    output[23:0] vga_color_o
+);
     parameter CLK_SYS_HZ = 50_000_000;
 
-    // begin PLL
 `ifndef SYNTHESIS
-    // in sim, clk_sys is driven and clk_25mhz is ignored
-    assign sdram_clk = clk_sys;
-
     wire pixel_valid /* verilator public */ = timing1.blank_n == 1 && timing1.valid;
-`else
-    wire locked;
-    wire [3:0] clocks;
-    ecp5pll
-    #(
-        .in_hz(  25_000_000),
-        .out0_hz(CLK_SYS_HZ),
-        .out1_hz(CLK_SYS_HZ), .out1_deg(90) // phase shifted for SDRAM chip
-    )
-    ecp5pll_inst
-    (
-        .clk_i(clk_25mhz),
-        .clk_o(clocks),
-        .locked(locked)
-    );
-
-    wire clk_sys     = clocks[0];
-    assign sdram_clk = clocks[1];
 `endif
 
     assign sdram_cke = 1'b1;
-    // end PLL
 
     // Memory control-related
     reg         sdram_rd;
@@ -181,23 +155,6 @@ module top
       .rgb_o(color2)
     );
 
-`ifdef SYNTHESIS
-    hdmi_video hdmi_video
-    (
-        .clk_25mhz(clk_25mhz),
-
-        .hsync_n_i(timing1.hsync_n),
-        .vsync_n_i(timing1.vsync_n),
-        .blank_n_i(timing1.blank_n),
-
-        .color_i(color2),
-
-        .gpdi_dp(gpdi_dp)
-        //.gpdi_dn(gpdi_dn)
-        // .vga_vsync(led[0])
-        //.clk_locked(led[2])
-    );
-`endif
 
     wire[31:0] bootrom_data;
     reg[31:0] mem_io_rdata;
@@ -459,6 +416,11 @@ module top
             // $display("WRITE CHAR '%c'", uart_tx_data);
         end
     end
+
+    assign hsync_n_o = timing1.hsync_n;
+    assign vsync_n_o = timing1.vsync_n;
+    assign blank_n_o = timing1.blank_n;
+    assign vga_color_o = color2;
 
     // assign led[0] = cpu_mem_valid;
     // assign led[1] = cpu_mem_ready;

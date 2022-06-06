@@ -9,6 +9,7 @@ read_verilog \
     rtl/RGB_Color_Bars_Generator.v \
     rtl/Text_Generator.v \
     rtl/tmds_encoder.v \
+    rtl/top_ulx3s.v \
     rtl/vga2dvid.v \
     rtl/generated/top_csr.v \
     rtl/generated/VexRiscv.v \
@@ -21,5 +22,5 @@ read_verilog -noassert -sv \
     rtl/VGA_Timing_Generator.sv \
     rtl/Video_Ctrl.sv \
     rtl/ecp5/ecp5pll.sv
-hierarchy -top top
+hierarchy -top top_ulx3s
 synth_ecp5 -json poly94.json

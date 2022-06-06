@@ -5,7 +5,7 @@ module top_sim(
 );
 
 wire sdram_csn;
-wire sdram_clk;
+wire sdram_clk = clk_sys;
 wire sdram_cke;
 wire sdram_rasn;
 wire sdram_casn;
@@ -21,7 +21,6 @@ top top_inst(
     .clk_sys,
 
     .sdram_csn,
-    .sdram_clk,
     .sdram_cke,
     .sdram_rasn,
     .sdram_casn,
