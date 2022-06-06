@@ -21,14 +21,13 @@ Note: might want to take advantage of RV32's single-instruction calls relative t
 
     bit  31     -> cache bypass
     bits 26..24 -> region (3 bits)
-                    0 = trap
-                    1 = I/O space
+                    0 = control/status registers   (TODO: trap if accessed with bit 31 cleared)
                     3 = rom
                     4..7 = sdram    (in other words: bit 26 -> SDRAM(1) / non-SDRAM(0))
     bit  23..0  -> address within 16M region
                     (not necessarily fully decoded)
 
-CPU external address bus is effectively 28 bits wide.
+CPU external address bus is effectively 27 bits wide (though bit 31 is also used to trap NULL pointer dereferences).
 
 
 ## Detailed description

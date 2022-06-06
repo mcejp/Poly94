@@ -11,7 +11,7 @@ enum { SDRAM_START          = 0x04000000 };
 
 /* Control/status registers (with cache bypass bit set) */
 
-#define _HW (*(struct top volatile*)0x81000000)
+#define _HW (*(struct top volatile*)0x80000000)
 
 
 /* RISC-V stuff */
