@@ -74,7 +74,7 @@
 <td class="td_code">UART.DATA</td>
 </tr>
 <tr class="tr_even">
-<td class="td_code">0x20-0x27</td>
+<td class="td_code">0x20-0x2f</td>
 <td>SUBMAP</td>
 <td><A href="#VIDEO">VIDEO</a></td>
 <td class="td_code">VIDEO</td>
@@ -93,6 +93,20 @@
 <td><A href="#VIDEO.BG_COLOR">VIDEO.BG_COLOR</a></td>
 <td class="td_code">VIDEO_BG_COLOR</td>
 <td class="td_code">VIDEO.BG_COLOR</td>
+</tr>
+<tr class="tr_odd">
+<td class="td_code">0x28</td>
+<td>REG</td>
+<td><A href="#VIDEO.FB_POS">VIDEO.FB_POS</a></td>
+<td class="td_code">VIDEO_FB_POS</td>
+<td class="td_code">VIDEO.FB_POS</td>
+</tr>
+<tr class="tr_even">
+<td class="td_code">0x2c</td>
+<td>REG</td>
+<td><A href="#VIDEO.FB_SIZE">VIDEO.FB_SIZE</a></td>
+<td class="td_code">VIDEO_FB_SIZE</td>
+<td class="td_code">VIDEO.FB_SIZE</td>
 </tr>
 </table>
 
@@ -468,6 +482,176 @@ G
 <li><b>
 B
 </b>[<i>rw</i>]: Blue component
+</ul>
+<a name="VIDEO.FB_POS"></a>
+<h3><a name="sect_3_5">2.5. VIDEO.FB_POS</a></h3>
+<table cellpadding=0 cellspacing=0 border=0>
+<tr><td><b>HW prefix:</b></td><td class="td_code">VIDEO_FB_POS</td></tr>
+<tr><td><b>HW address:</b></td><td class="td_code">0x28</td></tr>
+<tr><td><b>C prefix:</b></td><td class="td_code">VIDEO.FB_POS</td></tr>
+<tr><td><b>C block offset:</b></td><td class="td_code">0x8</td></tr>
+</table>
+<p>
+Framebuffer position in screen pixels; placeholder for future implementation
+</p>
+<table cellpadding=0 cellspacing=0 border=0>
+<tr>
+ <td class="td_bit" colspan="1">31</td>
+ <td class="td_bit" colspan="1">30</td>
+ <td class="td_bit" colspan="1">29</td>
+ <td class="td_bit" colspan="1">28</td>
+ <td class="td_bit" colspan="1">27</td>
+ <td class="td_bit" colspan="1">26</td>
+ <td class="td_bit" colspan="1">25</td>
+ <td class="td_bit" colspan="1">24</td>
+</tr>
+<tr>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_field" colspan="2">Y[9:8]</td>
+</tr>
+<tr>
+ <td class="td_bit" colspan="1">23</td>
+ <td class="td_bit" colspan="1">22</td>
+ <td class="td_bit" colspan="1">21</td>
+ <td class="td_bit" colspan="1">20</td>
+ <td class="td_bit" colspan="1">19</td>
+ <td class="td_bit" colspan="1">18</td>
+ <td class="td_bit" colspan="1">17</td>
+ <td class="td_bit" colspan="1">16</td>
+</tr>
+<tr>
+ <td class="td_field" colspan="8">Y[7:0]</td>
+</tr>
+<tr>
+ <td class="td_bit" colspan="1">15</td>
+ <td class="td_bit" colspan="1">14</td>
+ <td class="td_bit" colspan="1">13</td>
+ <td class="td_bit" colspan="1">12</td>
+ <td class="td_bit" colspan="1">11</td>
+ <td class="td_bit" colspan="1">10</td>
+ <td class="td_bit" colspan="1">9</td>
+ <td class="td_bit" colspan="1">8</td>
+</tr>
+<tr>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_field" colspan="2">X[9:8]</td>
+</tr>
+<tr>
+ <td class="td_bit" colspan="1">7</td>
+ <td class="td_bit" colspan="1">6</td>
+ <td class="td_bit" colspan="1">5</td>
+ <td class="td_bit" colspan="1">4</td>
+ <td class="td_bit" colspan="1">3</td>
+ <td class="td_bit" colspan="1">2</td>
+ <td class="td_bit" colspan="1">1</td>
+ <td class="td_bit" colspan="1">0</td>
+</tr>
+<tr>
+ <td class="td_field" colspan="8">X[7:0]</td>
+</tr>
+</table>
+<ul>
+<li><b>
+Y
+</b>[<i>ro</i>]: Y coordinate
+<li><b>
+X
+</b>[<i>ro</i>]: X coordinate
+</ul>
+<a name="VIDEO.FB_SIZE"></a>
+<h3><a name="sect_3_6">2.6. VIDEO.FB_SIZE</a></h3>
+<table cellpadding=0 cellspacing=0 border=0>
+<tr><td><b>HW prefix:</b></td><td class="td_code">VIDEO_FB_SIZE</td></tr>
+<tr><td><b>HW address:</b></td><td class="td_code">0x2c</td></tr>
+<tr><td><b>C prefix:</b></td><td class="td_code">VIDEO.FB_SIZE</td></tr>
+<tr><td><b>C block offset:</b></td><td class="td_code">0xc</td></tr>
+</table>
+<p>
+Framebuffer dimensions and scaling; placeholder for future implementation
+</p>
+<table cellpadding=0 cellspacing=0 border=0>
+<tr>
+ <td class="td_bit" colspan="1">31</td>
+ <td class="td_bit" colspan="1">30</td>
+ <td class="td_bit" colspan="1">29</td>
+ <td class="td_bit" colspan="1">28</td>
+ <td class="td_bit" colspan="1">27</td>
+ <td class="td_bit" colspan="1">26</td>
+ <td class="td_bit" colspan="1">25</td>
+ <td class="td_bit" colspan="1">24</td>
+</tr>
+<tr>
+ <td class="td_field" colspan="4">YSCALE[3:0]</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_field" colspan="2">HEIGHT[9:8]</td>
+</tr>
+<tr>
+ <td class="td_bit" colspan="1">23</td>
+ <td class="td_bit" colspan="1">22</td>
+ <td class="td_bit" colspan="1">21</td>
+ <td class="td_bit" colspan="1">20</td>
+ <td class="td_bit" colspan="1">19</td>
+ <td class="td_bit" colspan="1">18</td>
+ <td class="td_bit" colspan="1">17</td>
+ <td class="td_bit" colspan="1">16</td>
+</tr>
+<tr>
+ <td class="td_field" colspan="8">HEIGHT[7:0]</td>
+</tr>
+<tr>
+ <td class="td_bit" colspan="1">15</td>
+ <td class="td_bit" colspan="1">14</td>
+ <td class="td_bit" colspan="1">13</td>
+ <td class="td_bit" colspan="1">12</td>
+ <td class="td_bit" colspan="1">11</td>
+ <td class="td_bit" colspan="1">10</td>
+ <td class="td_bit" colspan="1">9</td>
+ <td class="td_bit" colspan="1">8</td>
+</tr>
+<tr>
+ <td class="td_field" colspan="4">XSCALE[3:0]</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_unused" colspan="1">-</td>
+ <td class="td_field" colspan="2">WIDTH[9:8]</td>
+</tr>
+<tr>
+ <td class="td_bit" colspan="1">7</td>
+ <td class="td_bit" colspan="1">6</td>
+ <td class="td_bit" colspan="1">5</td>
+ <td class="td_bit" colspan="1">4</td>
+ <td class="td_bit" colspan="1">3</td>
+ <td class="td_bit" colspan="1">2</td>
+ <td class="td_bit" colspan="1">1</td>
+ <td class="td_bit" colspan="1">0</td>
+</tr>
+<tr>
+ <td class="td_field" colspan="8">WIDTH[7:0]</td>
+</tr>
+</table>
+<ul>
+<li><b>
+YSCALE
+</b>[<i>ro</i>]: Y scale minus 1
+<li><b>
+HEIGHT
+</b>[<i>ro</i>]: Y dimension in source pixels
+<li><b>
+XSCALE
+</b>[<i>ro</i>]: X scale minus 1
+<li><b>
+WIDTH
+</b>[<i>ro</i>]: X dimension in source pixels
 </ul>
 
 

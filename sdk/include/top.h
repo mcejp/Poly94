@@ -3,7 +3,7 @@
 
 #include "uart.h"
 #include "video.h"
-#define TOP_SIZE 40 /* 0x28 */
+#define TOP_SIZE 48 /* 0x30 */
 
 /* An included submap */
 #define TOP_UART 0x10UL
@@ -12,8 +12,8 @@
 
 /* An included submap */
 #define TOP_VIDEO 0x20UL
-#define ADDR_MASK_TOP_VIDEO 0x38UL
-#define TOP_VIDEO_SIZE 8 /* 0x8 */
+#define ADDR_MASK_TOP_VIDEO 0x30UL
+#define TOP_VIDEO_SIZE 16 /* 0x10 */
 
 struct top {
 

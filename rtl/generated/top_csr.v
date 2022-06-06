@@ -161,6 +161,10 @@ module top_csr
       end
   end
 
+  // Register VIDEO_FB_POS
+
+  // Register VIDEO_FB_SIZE
+
   // Process for write requests.
   always @(wr_adr_d0, wr_req_d0, VIDEO_CTRL_wack, VIDEO_BG_COLOR_wack)
       begin
@@ -189,6 +193,12 @@ module top_csr
             VIDEO_BG_COLOR_wreq <= wr_req_d0;
             wr_ack_int <= VIDEO_BG_COLOR_wack;
           end
+        4'b1010:
+          // Reg VIDEO_FB_POS
+          wr_ack_int <= wr_req_d0;
+        4'b1011:
+          // Reg VIDEO_FB_SIZE
+          wr_ack_int <= wr_req_d0;
         default:
           wr_ack_int <= wr_req_d0;
         endcase
@@ -232,6 +242,26 @@ module top_csr
             rd_dat_d0[15:8] <= VIDEO_BG_COLOR_G_reg;
             rd_dat_d0[23:16] <= VIDEO_BG_COLOR_R_reg;
             rd_dat_d0[31:24] <= 8'b0;
+          end
+        4'b1010:
+          begin
+            // Reg VIDEO_FB_POS
+            rd_ack_d0 <= rd_req_int;
+            rd_dat_d0[9:0] <= 10'b0000000000;
+            rd_dat_d0[15:10] <= 6'b0;
+            rd_dat_d0[25:16] <= 10'b0000000000;
+            rd_dat_d0[31:26] <= 6'b0;
+          end
+        4'b1011:
+          begin
+            // Reg VIDEO_FB_SIZE
+            rd_ack_d0 <= rd_req_int;
+            rd_dat_d0[9:0] <= 10'b0101000000;
+            rd_dat_d0[11:10] <= 2'b0;
+            rd_dat_d0[15:12] <= 4'b0000;
+            rd_dat_d0[25:16] <= 10'b0011110000;
+            rd_dat_d0[27:26] <= 2'b0;
+            rd_dat_d0[31:28] <= 4'b0000;
           end
         default:
           rd_ack_d0 <= rd_req_int;

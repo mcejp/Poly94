@@ -36,3 +36,51 @@ memory-map:
           name: B
           range: 7-0
           description: Blue component
+
+  - reg:
+      name: FB_POS
+      description: Framebuffer position in screen pixels; placeholder for future implementation
+
+      access: ro
+      width: 32
+      x-hdl: {type: const}
+      children:
+      - field:
+          name: Y
+          range: 25-16
+          description: Y coordinate
+          preset: 0
+      - field:
+          name: X
+          range: 9-0
+          description: X coordinate
+          preset: 0
+
+  - reg:
+      name: FB_SIZE
+      description: Framebuffer dimensions and scaling; placeholder for future implementation
+
+      access: ro
+      width: 32
+      x-hdl: {type: const}
+      children:
+      - field:
+          name: YSCALE
+          range: 31-28
+          description: Y scale minus 1
+          preset: 0
+      - field:
+          name: HEIGHT
+          range: 25-16
+          description: Y dimension in source pixels
+          preset: 240
+      - field:
+          name: XSCALE
+          range: 15-12
+          description: X scale minus 1
+          preset: 0
+      - field:
+          name: WIDTH
+          range: 9-0
+          description: X dimension in source pixels
+          preset: 320
