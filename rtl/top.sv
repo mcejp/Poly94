@@ -261,9 +261,9 @@ module top
         .dBus_cmd_payload_size(cpu_dBus_cmd_payload_size),
         .dBus_cmd_payload_last(cpu_dBus_cmd_payload_last),
         .dBus_rsp_valid(cpu_dBus_rsp_valid),
-        .dBus_rsp_payload_last(0),
+        .dBus_rsp_payload_last('0),
         .dBus_rsp_payload_data(cpu_dBus_rsp_payload_data),
-        .dBus_rsp_payload_error(0),
+        .dBus_rsp_payload_error('0),
 
         .iBus_cmd_valid(cpu_iBus_cmd_valid),
         .iBus_cmd_ready(cpu_iBus_cmd_ready),    // this must be a 0-cycle signal
@@ -271,11 +271,11 @@ module top
         .iBus_cmd_payload_size(cpu_iBus_cmd_payload_size),
         .iBus_rsp_valid(cpu_iBus_rsp_valid),
         .iBus_rsp_payload_data(cpu_iBus_rsp_payload_data),
-        .iBus_rsp_payload_error(0),
+        .iBus_rsp_payload_error('0),
 
-        .timerInterrupt(0),
-        .externalInterrupt(0),
-        .softwareInterrupt(0)
+        .timerInterrupt('0),
+        .externalInterrupt('0),
+        .softwareInterrupt('0)
     );
 
     CPU_Rom bootrom(
