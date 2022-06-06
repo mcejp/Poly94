@@ -25,7 +25,7 @@ module Memory_Ctrl(
   output[31:0]      cpu_dBus_rsp_payload_data,
 
   input             cpu_iBus_cmd_valid,
-  output            cpu_iBus_cmd_ready,
+  output reg        cpu_iBus_cmd_ready,
   input[31:0]       cpu_iBus_cmd_payload_address,
   input[2:0]        cpu_iBus_cmd_payload_size,
   output reg        cpu_iBus_rsp_valid,
@@ -55,21 +55,13 @@ module Memory_Ctrl(
   input[31:0]       bootrom_data_i
 );
 
-// Read data multiplex
-
-
-reg[31:0] cpu_sdram_rdata;
-
-enum { MEM_BOOTROM, MEM_CSR, MEM_SDRAM } cpu_mem_select;
-
-//
 
 localparam CMD_SIZE_8BIT  = 2'd0;
 localparam CMD_SIZE_16BIT = 2'd1;
 localparam CMD_SIZE_32BIT = 2'd2;
 
 // keep number of top-level states to a minimum so that high-fanout expressions like 'io_write_valid_o' are simple
-enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_BURST_READ_BOOTROM, STATE_SDRAM_ACK, STATE_CSR } mem_state;
+enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_WAIT_BOOTROM, STATE_BURST_READ_BOOTROM, STATE_SDRAM_ACK, STATE_CSR } mem_state;
 
 wire dBus_is_sdram_addr =   addr_is_sdram(cpu_dBus_cmd_payload_address);
 wire iBus_is_sdram_addr =   addr_is_sdram(cpu_iBus_cmd_payload_address);
@@ -90,6 +82,7 @@ reg reading_bootrom;
 always_comb begin
     // ready must go down in 0 clocks, otherwise we will be flooded with further requests
     cpu_dBus_cmd_ready = (mem_state == STATE_IDLE);
+    cpu_iBus_cmd_ready = (mem_state == STATE_IDLE) && !cpu_dBus_cmd_valid;
 end
 
 always @ (posedge clk_i) begin
@@ -102,7 +95,6 @@ always @ (posedge clk_i) begin
 
     if (rst_i) begin
         mem_state <= STATE_IDLE;
-        cpu_mem_select <= MEM_BOOTROM;
         sdram_rd <= 0;
         sdram_wr <= 0;
         waitstate_counter <= 0;
@@ -135,7 +127,6 @@ always @ (posedge clk_i) begin
 
               if (addr_is_csr(cpu_dBus_cmd_payload_address)) begin
                 mem_state <= STATE_CSR;
-                cpu_mem_select <= MEM_CSR;
 
 `ifdef VERBOSE_MEMCTL
                 $display("begin CSR [%08Xh] is_wr=%d msk=%04b sz=%d wdata=%08X", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_wr, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size, cpu_dBus_cmd_payload_data);
@@ -201,7 +192,6 @@ always @ (posedge clk_i) begin
                     sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[31:2], 1'b0};
                     sdram_rd <= 1;
 
-                    cpu_mem_select <= MEM_SDRAM;
                     mem_state <= STATE_SDRAM_WAIT;
                 end else begin
                     // ROM read (or a futile attempt to write)
@@ -210,8 +200,7 @@ always @ (posedge clk_i) begin
                     $display("begin ROM read [%08Xh] msk=%04b sz=%d", cpu_dBus_cmd_payload_address, cpu_dBus_cmd_payload_mask, cpu_dBus_cmd_payload_size);
 `endif
 
-                    cpu_mem_select <= MEM_BOOTROM;
-                    mem_state <= STATE_BURST_READ_BOOTROM;
+                    mem_state <= STATE_WAIT_BOOTROM;
 
                     mem_purpose <= PURPOSE_D;
                 end
@@ -237,7 +226,6 @@ always @ (posedge clk_i) begin
                     sdram_addr_x16 <= {cpu_iBus_cmd_payload_address[31:2], 1'b0};
                     sdram_rd <= 1;
 
-                    cpu_mem_select <= MEM_SDRAM;
                     mem_state <= STATE_SDRAM_WAIT;
                 end else begin
 `ifdef VERBOSE_MEMCTL
@@ -245,7 +233,7 @@ always @ (posedge clk_i) begin
 `endif
 
                     mem_addr <= cpu_iBus_cmd_payload_address;
-                    mem_state <= STATE_BURST_READ_BOOTROM;
+                    mem_state <= STATE_WAIT_BOOTROM;
                 end
 
                 mem_purpose <= PURPOSE_I;
@@ -306,13 +294,13 @@ always @ (posedge clk_i) begin
                     if (sdram_addr_x16[0] == 0 && sdram_ack == 0) begin
                         // Acknowledge low halfword
 
-                        cpu_sdram_rdata[15:0] <= sdram_rdata;
+                        // cpu_sdram_rdata[15:0] <= sdram_rdata;
                         sdram_rd <= 0;
                         sdram_ack <= 1;
 
                         mem_state <= STATE_SDRAM_WAIT;
                     end else if (sdram_addr_x16[0] == 1) begin
-                        cpu_sdram_rdata[31:16] <= sdram_rdata;
+                        // cpu_sdram_rdata[31:16] <= sdram_rdata;
 
                         // addr=1, sdram ready, wait done -> 32-bit read finished
                         sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
@@ -324,16 +312,11 @@ always @ (posedge clk_i) begin
                             cpu_dBus_rsp_valid <= 1;
                         end
 
-`ifdef VERBOSE_MEMCTL
-                        $display("  finished 32-bit SDRAM read [%08X] => %08X", mem_addr, {sdram_rdata, cpu_sdram_rdata[15:0]});
-`endif
-
                         if (words_remaining == 0) begin
                             mem_state <= STATE_FINISHED;
                         end else begin
                             mem_state <= STATE_SDRAM_ACK;
 
-                            cpu_mem_select <= MEM_SDRAM;
                             sdram_ack <= 1;   // not async safe etc.
                         end
 
@@ -360,6 +343,13 @@ always @ (posedge clk_i) begin
             sdram_ack <= 1;         // OK to only be ACKing when already ready for next request?
         end
 
+        // TODO: possible to get rid of this extra wait-state?
+        //       (adding a mux to cpu_dBus_rsp_payload_data won't work, brings down f_max)
+        STATE_WAIT_BOOTROM: begin
+            mem_addr <= mem_addr + 4;
+            mem_state <= STATE_BURST_READ_BOOTROM;
+        end
+
         STATE_BURST_READ_BOOTROM: begin
             if (mem_purpose == PURPOSE_I) begin
                 cpu_iBus_rsp_valid <= 1'b1;
@@ -368,8 +358,6 @@ always @ (posedge clk_i) begin
             end
 
             reading_bootrom <= 1;
-
-            cpu_mem_select <= MEM_BOOTROM;
 
             if (words_remaining == 0) begin
                 mem_state <= STATE_FINISHED;
@@ -426,25 +414,44 @@ always @ (posedge clk_i, posedge rst_i) begin
     end
 end
 
-reg[31:0] csr_read_data;
+reg[31:0] cpu_rdata;
 
-always @ (posedge clk_i, posedge rst_i) begin
+always_ff @ (posedge clk_i, posedge rst_i) begin
     if (rst_i) begin
-        csr_read_data <= '0;
+        cpu_rdata <= '0;
     end else begin
+        // TOOD: how to give hint that all ifs exclusive?
+
+        // cpu_rdata <= 'x;        // data read response is a single-cycle strobe
+
         if (csr_ack_i) begin
-            csr_read_data <= csr_dat_i;
+            cpu_rdata <= csr_dat_i;
+        end
+
+        if (mem_state == STATE_BURST_READ_BOOTROM) begin
+            cpu_rdata <= bootrom_data_i;
+        end
+
+        if (mem_state == STATE_SDRAM_WAIT) begin
+            // This hellish expression could surely be simplified
+            if (waitstate_counter >= 2 && !(sdram_addr_x16[0] == 0 && sdram_ack == 1) && sdram_rdy && !mem_is_wr) begin
+                if (sdram_addr_x16[0] == 0 && sdram_ack == 0) begin
+                    cpu_rdata[15:0] <= sdram_rdata;
+                end else if (sdram_addr_x16[0] == 1) begin
+`ifdef VERBOSE_MEMCTL
+                    $display("  finished 32-bit SDRAM read [%08X] => %08X", mem_addr, {sdram_rdata, cpu_rdata[15:0]});
+`endif
+
+                    cpu_rdata[31:16] <= sdram_rdata;
+                end
+            end
         end
     end
 end
 
 assign addr_o = mem_addr;
 
-assign cpu_dBus_rsp_payload_data = cpu_mem_select == MEM_CSR ? csr_read_data :
-                               cpu_mem_select == MEM_BOOTROM ? bootrom_data_i :
-                               cpu_sdram_rdata;
-
-assign cpu_iBus_rsp_payload_data = cpu_mem_select == MEM_BOOTROM ? bootrom_data_i :
-                               cpu_sdram_rdata;
+assign cpu_dBus_rsp_payload_data = cpu_rdata;
+assign cpu_iBus_rsp_payload_data = cpu_rdata;
 
 endmodule
