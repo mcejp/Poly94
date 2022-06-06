@@ -1,25 +1,38 @@
 memory-map:
   bus: wb-32-be
   name: video
-  description: Poly94 VIDEO control/status registers
+
   children:
   - reg:
       name: CTRL
+      description: Control register
+
       access: wo
       width: 32
       children:
       - field:
           name: FB_EN
           range: 0
-          comment: |
+          description: |
             Write 1 to enable framebuffer display.
             Note that this reduces system performance since the GPU needs to contend with CPU over the SDRAM bus.
+
   - reg:
       name: BG_COLOR
+      description: Display background color in RGB888 format
+
       access: rw
       width: 32
       children:
       - field:
-          name: COLOR
-          range: 23-0
-          comment: Set display background color in RGB888 format.
+          name: R
+          range: 23-16
+          description: Red component
+      - field:
+          name: G
+          range: 15-8
+          description: Green component
+      - field:
+          name: B
+          range: 7-0
+          description: Blue component

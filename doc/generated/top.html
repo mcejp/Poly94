@@ -294,6 +294,9 @@ The transmission is always 8-bit.
 <tr><td><b>C prefix:</b></td><td class="td_code">VIDEO.CTRL</td></tr>
 <tr><td><b>C block offset:</b></td><td class="td_code">0x0</td></tr>
 </table>
+<p>
+Control register
+</p>
 <table cellpadding=0 cellspacing=0 border=0>
 <tr>
  <td class="td_bit" colspan="1">31</td>
@@ -379,8 +382,9 @@ The transmission is always 8-bit.
 <ul>
 <li><b>
 FB_EN
-</b>[<i>wo</i>]: 
-<br>Write 1 to enable framebuffer display.<br>Note that this reduces system performance since the GPU needs to contend with CPU over the SDRAM bus.
+</b>[<i>wo</i>]: Write 1 to enable framebuffer display.
+Note that this reduces system performance since the GPU needs to contend with CPU over the SDRAM bus.
+
 </ul>
 <a name="VIDEO.BG_COLOR"></a>
 <h3><a name="sect_3_4">2.4. VIDEO.BG_COLOR</a></h3>
@@ -390,6 +394,9 @@ FB_EN
 <tr><td><b>C prefix:</b></td><td class="td_code">VIDEO.BG_COLOR</td></tr>
 <tr><td><b>C block offset:</b></td><td class="td_code">0x4</td></tr>
 </table>
+<p>
+Display background color in RGB888 format
+</p>
 <table cellpadding=0 cellspacing=0 border=0>
 <tr>
  <td class="td_bit" colspan="1">31</td>
@@ -422,7 +429,7 @@ FB_EN
  <td class="td_bit" colspan="1">16</td>
 </tr>
 <tr>
- <td class="td_field" colspan="8">COLOR[23:16]</td>
+ <td class="td_field" colspan="8">R[7:0]</td>
 </tr>
 <tr>
  <td class="td_bit" colspan="1">15</td>
@@ -435,7 +442,7 @@ FB_EN
  <td class="td_bit" colspan="1">8</td>
 </tr>
 <tr>
- <td class="td_field" colspan="8">COLOR[15:8]</td>
+ <td class="td_field" colspan="8">G[7:0]</td>
 </tr>
 <tr>
  <td class="td_bit" colspan="1">7</td>
@@ -448,14 +455,19 @@ FB_EN
  <td class="td_bit" colspan="1">0</td>
 </tr>
 <tr>
- <td class="td_field" colspan="8">COLOR[7:0]</td>
+ <td class="td_field" colspan="8">B[7:0]</td>
 </tr>
 </table>
 <ul>
 <li><b>
-COLOR
-</b>[<i>rw</i>]: 
-<br>Set display background color in RGB888 format.
+R
+</b>[<i>rw</i>]: Red component
+<li><b>
+G
+</b>[<i>rw</i>]: Green component
+<li><b>
+B
+</b>[<i>rw</i>]: Blue component
 </ul>
 
 
