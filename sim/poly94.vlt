@@ -1,0 +1,10 @@
+`verilator_config
+
+lint_off -rule PINCONNECTEMPTY      // why is this even a warning?
+lint_off -rule SYNCASYNCNET         // temporary...
+lint_off -rule TIMESCALEMOD         // don't care
+
+lint_off -rule COMBDLY -file "*rtl/generated/top_csr.v"
+lint_off -rule UNUSED -file "*rtl/generated/top_csr.v"
+
+lint_off -file "*rtl/generated/VexRiscv.v"

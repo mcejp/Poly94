@@ -124,11 +124,11 @@ always @ (*) begin
   end else begin
     sdram_rd = 0;
     sdram_wr = 0;
-    sdram_addr_x16 = 16'hxxxx;
-    sdram_wdata = 16'hxxxx;
+    sdram_addr_x16 = 'x;
+    sdram_wdata = 'x;
     sdram_ack = 0;
-    sdram_wmask = 2'bxx;
-    sdram_burst = 1'bx;
+    sdram_wmask = 'x;
+    sdram_burst = 'x;
 
     cpu_sdram_rdy = 0;
     video_sdram_rdy = 1'b0;

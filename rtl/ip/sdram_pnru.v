@@ -78,7 +78,7 @@ module sdram_pnru (
   reg         init = 1'b1;
   wire  [8:0] col  = ab[8:0];
   wire [12:0] row  = ab[23:11];
-  wire  [2:0] ba   = ab[10:9];
+  wire  [1:0] ba   = ab[10:9];
   
   // SDRAM command codes
   localparam NOP  = 4'b1000, PRECHRG = 4'b0001, AUTORFRSH = 4'b0100, MODESET = 4'b0000,

@@ -50,7 +50,9 @@ reg[$clog2(V_TOTAL)-1:0] next_scanline;     // scanline in *next clock tick*, no
 
 // clock in line
 // 0 to 795 -> 10 bits
+// verilator lint_off UNUSED
 reg[$clog2(H_TOTAL)-1:0] i;
+// verilator lint_on UNUSED
 reg[$clog2(H_TOTAL)-1:0] next_i;
 
 // are we in picture area? (vertically)
@@ -99,7 +101,7 @@ always @ (posedge clk_i) begin
         if (next_i < H_TOTAL-1) begin
             next_i <= next_i + 1'b1;
         end else begin
-            next_i <= 1'b0;
+            next_i <= '0;
 
             if (scanline < V_TOTAL-1) begin
                 next_scanline <= scanline + 1'b1;

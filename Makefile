@@ -120,6 +120,7 @@ sim:
 			--cc \
 			--exe \
 			--trace \
+			sim/poly94.vlt \
 			sim/sim_main.cpp \
 			sim/sdr_sdram/sdr_sdram.cpp \
 			rtl/top.sv

@@ -44,27 +44,29 @@ module Memory_Ctrl(
   // SDRAM
   output reg        sdram_rd,           // not strobe -- keep up until ACK (TODO verify)
   output reg        sdram_wr,
-  output            sdram_rdy,
+  input             sdram_rdy,
   output reg        sdram_ack,
   output reg[23:0]  sdram_addr_x16,     // sdram address in 16-bit words (16Mw => 32MB)
   output reg[15:0]  sdram_wdata,
-  output[15:0]      sdram_rdata,
+  input[15:0]       sdram_rdata,
   output reg[1:0]   sdram_wmask,
 
-  output[31:0]      addr_o,             // applies to Boot ROM (only?)
-  input[31:0]       bootrom_data_i
+  // Boot ROM; must have exactly 1 cycle read delay
+  output[BOOTROM_ADDR_BITS-1:2] bootrom_addr_o,
+  input[31:0]                   bootrom_data_i
 );
 
 
-localparam CMD_SIZE_8BIT  = 2'd0;
-localparam CMD_SIZE_16BIT = 2'd1;
-localparam CMD_SIZE_32BIT = 2'd2;
+localparam[2:0] CMD_SIZE_8BIT  = 3'd0;
+localparam[2:0] CMD_SIZE_16BIT = 3'd1;
+localparam[2:0] CMD_SIZE_32BIT = 3'd2;
 
 // keep number of top-level states to a minimum so that high-fanout expressions like 'io_write_valid_o' are simple
 enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_WAIT_BOOTROM, STATE_BURST_READ_BOOTROM, STATE_SDRAM_ACK, STATE_CSR } mem_state;
 
-wire dBus_is_sdram_addr =   addr_is_sdram(cpu_dBus_cmd_payload_address);
-wire iBus_is_sdram_addr =   addr_is_sdram(cpu_iBus_cmd_payload_address);
+wire dBus_is_csr_addr =     addr_is_csr(cpu_dBus_cmd_payload_address[26:0]);
+wire dBus_is_sdram_addr =   addr_is_sdram(cpu_dBus_cmd_payload_address[26:0]);
+wire iBus_is_sdram_addr =   addr_is_sdram(cpu_iBus_cmd_payload_address[26:0]);
 
 reg[1:0] waitstate_counter;
 reg[2:0] words_remaining;       // up to 7
@@ -73,7 +75,9 @@ reg[2:0] words_remaining;       // up to 7
 reg[31:0] mem_addr;
 reg mem_is_wr;
 reg[2:0] mem_size;
+// verilator lint_off UNUSED
 reg[31:0] mem_wdata;          // we never use the lower half, but it will be optimized out
+// verilator lint_on UNUSED
 
 enum { PURPOSE_I, PURPOSE_D } mem_purpose;
 
@@ -125,7 +129,7 @@ always @ (posedge clk_i) begin
               mem_size <= cpu_dBus_cmd_payload_size;
               mem_wdata <= cpu_dBus_cmd_payload_data;
 
-              if (addr_is_csr(cpu_dBus_cmd_payload_address)) begin
+              if (dBus_is_csr_addr) begin
                 mem_state <= STATE_CSR;
 
 `ifdef VERBOSE_MEMCTL
@@ -143,7 +147,7 @@ always @ (posedge clk_i) begin
                 mem_state <= STATE_SDRAM_WAIT;
 
                 // low halfword first
-                sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[31:2], 1'b0};
+                sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[$left(sdram_addr_x16) + 1:2], 1'b0};
                 sdram_wdata <= cpu_dBus_cmd_payload_data[15:0];
                 sdram_wr <= 1;
               end else if (cpu_dBus_cmd_payload_wr && cpu_dBus_cmd_payload_size == CMD_SIZE_8BIT) begin
@@ -158,7 +162,7 @@ always @ (posedge clk_i) begin
 
                 mem_state <= STATE_SDRAM_WAIT;
 
-                sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[31:1]};
+                sdram_addr_x16 <= cpu_dBus_cmd_payload_address[$left(sdram_addr_x16) + 1:1];
                 sdram_wdata <= cpu_dBus_cmd_payload_data[15:0];
                 sdram_wr <= 1;
                 sdram_wmask <= cpu_dBus_cmd_payload_mask[1:0] | cpu_dBus_cmd_payload_mask[3:2];
@@ -171,7 +175,7 @@ always @ (posedge clk_i) begin
 
                 mem_state <= STATE_SDRAM_WAIT;
 
-                sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[31:1]};
+                sdram_addr_x16 <= cpu_dBus_cmd_payload_address[$left(sdram_addr_x16) + 1:1];
                 sdram_wdata <= cpu_dBus_cmd_payload_data[15:0];
                 sdram_wr <= 1;
               end else if (!cpu_dBus_cmd_payload_wr) begin
@@ -189,7 +193,7 @@ always @ (posedge clk_i) begin
 `endif
 
                     // low halfword first
-                    sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[31:2], 1'b0};
+                    sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[$left(sdram_addr_x16) + 1:2], 1'b0};
                     sdram_rd <= 1;
 
                     mem_state <= STATE_SDRAM_WAIT;
@@ -223,7 +227,7 @@ always @ (posedge clk_i) begin
 `endif
 
                     // low halfword first
-                    sdram_addr_x16 <= {cpu_iBus_cmd_payload_address[31:2], 1'b0};
+                    sdram_addr_x16 <= {cpu_iBus_cmd_payload_address[$left(sdram_addr_x16) + 1:2], 1'b0};
                     sdram_rd <= 1;
 
                     mem_state <= STATE_SDRAM_WAIT;
@@ -258,7 +262,7 @@ always @ (posedge clk_i) begin
                 sdram_ack <= 0;
 
                 // high halfword now
-                sdram_addr_x16 <= {mem_addr[31:2], 1'b1};
+                sdram_addr_x16 <= {mem_addr[$left(sdram_addr_x16) + 1:2], 1'b1};
                 sdram_wdata <= mem_wdata[31:16];
 
                 waitstate_counter <= 0;
@@ -332,7 +336,7 @@ always @ (posedge clk_i) begin
 
         STATE_SDRAM_ACK: begin
           // low halfword first
-          sdram_addr_x16 <= {mem_addr[31:2], 1'b0};
+          sdram_addr_x16 <= {mem_addr[$left(sdram_addr_x16) + 1:2], 1'b0};
           sdram_rd <= 1;
           mem_state <= STATE_SDRAM_WAIT;
           sdram_ack <= 0;
@@ -397,7 +401,7 @@ always @ (posedge clk_i, posedge rst_i) begin
         csr_dat_o <= '0;
     end else begin
         if (mem_state == STATE_IDLE) begin
-            if (cpu_dBus_cmd_valid && addr_is_csr(cpu_dBus_cmd_payload_address)) begin
+            if (cpu_dBus_cmd_valid && dBus_is_csr_addr) begin
                 csr_cyc_o <= '1;
                 csr_stb_o <= '1;
             end
@@ -451,7 +455,7 @@ always_ff @ (posedge clk_i, posedge rst_i) begin
     end
 end
 
-assign addr_o = mem_addr;
+assign bootrom_addr_o[$left(bootrom_addr_o):2] = mem_addr[$left(bootrom_addr_o):2];
 
 assign cpu_dBus_rsp_payload_data = cpu_rdata;
 assign cpu_iBus_rsp_payload_data = cpu_rdata;

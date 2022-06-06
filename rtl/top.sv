@@ -1,4 +1,5 @@
 `default_nettype none
+`include "memory_map.sv"
 `include "VGA_Timing.sv"
 
 module top
@@ -65,7 +66,8 @@ module top
     wire[23:0]  video_sdram_addr_x16;
     wire[15:0]  video_sdram_rdata;
 
-    wire[31:0]  mem_addr;                // TODO: trim down useless bits?
+    wire[BOOTROM_ADDR_BITS-1:2]  bootrom_addr;
+    wire[31:0]  bootrom_data;
 
     logic       csr_cyc;
     logic       csr_stb;
@@ -78,8 +80,6 @@ module top
 
     wire VGA_Timing timing0;
     wire VGA_Timing timing1         /* verilator public */;
-    // wire hsync_n1, vsync_n1, blank_n1, end_of_line1, end_of_frame1;
-    wire hsync_n2, vsync_n2, blank_n2, end_of_line2, end_of_frame2;
 
     wire [23:0] /*color1,*/ color2      /* verilator public */;
     reg[23:0] bg_col;
@@ -155,10 +155,6 @@ module top
       .rgb_o(color2)
     );
 
-
-    wire[31:0] bootrom_data;
-    reg[31:0] mem_io_rdata;
-
     reg uart_rx_strobe;
     wire[7:0] uart_rx_data;
     wire uart_rx_valid;
@@ -184,10 +180,8 @@ module top
     wire[31:0] cpu_dBus_cmd_payload_data;
     wire[3:0] cpu_dBus_cmd_payload_mask;
     wire[2:0] cpu_dBus_cmd_payload_size;
-    wire cpu_dBus_cmd_payload_last;
     reg cpu_dBus_rsp_valid;
     wire[31:0] cpu_dBus_rsp_payload_data;
-    //reg cpu_dBus_rsp_payload_last;  -- seems to be happily ignored
 
     wire cpu_iBus_cmd_valid;
     wire cpu_iBus_cmd_ready;
@@ -205,6 +199,7 @@ module top
     //  - dBus_rsp_valid must be strobed for a single cycle when data is valid and ONLY WHEN READING!
     //  - *Bus_cmd_payload_size is log2 of the size in bytes. Note, however, that the interface always operates in units of 32 bits.
     //  - as the commands are pipelined, all parameters of the transaction must be latched at cmd_valid=1
+    //  - _last signals seem to be convenience for AXI adapters and otherwise unused
     //
     VexRiscv cpu(
         .clk(clk_sys),
@@ -213,12 +208,12 @@ module top
         .dBus_cmd_valid(cpu_dBus_cmd_valid),
         .dBus_cmd_ready(cpu_dBus_cmd_ready),
         .dBus_cmd_payload_wr(cpu_dBus_cmd_payload_wr),
-        //output              dBus_cmd_payload_uncached,
+        .dBus_cmd_payload_uncached(),
         .dBus_cmd_payload_address(cpu_dBus_cmd_payload_address),
         .dBus_cmd_payload_data(cpu_dBus_cmd_payload_data),
         .dBus_cmd_payload_mask(cpu_dBus_cmd_payload_mask),
         .dBus_cmd_payload_size(cpu_dBus_cmd_payload_size),
-        .dBus_cmd_payload_last(cpu_dBus_cmd_payload_last),
+        .dBus_cmd_payload_last(),
         .dBus_rsp_valid(cpu_dBus_rsp_valid),
         .dBus_rsp_payload_last('0),
         .dBus_rsp_payload_data(cpu_dBus_rsp_payload_data),
@@ -239,7 +234,7 @@ module top
 
     CPU_Rom bootrom(
         .clk_i(clk_sys),
-        .addr_i(mem_addr[31:2]),
+        .addr_i(bootrom_addr),      // careful: address in 32-bit words
 
         .q_o(bootrom_data)
     );
@@ -310,7 +305,7 @@ module top
         // AXI input
         .s_axis_tdata(uart_tx_data),
         .s_axis_tvalid(uart_tx_strobe),
-        //.s_axis_tready,   unclear how this differs from ~busy
+        .s_axis_tready(),       // unclear how this differs from ~busy
 
         // AXI output
         .m_axis_tdata(uart_rx_data),
@@ -323,9 +318,9 @@ module top
     
         // Status
         .tx_busy(uart_tx_busy),
-        // output wire                   rx_busy,
-        // output wire                   rx_overrun_error,
-        // output wire                   rx_frame_error,
+        .rx_busy(),
+        .rx_overrun_error(),
+        .rx_frame_error(),
 
         .prescale(UART_BAUDRATE > 0 ? CLK_SYS_HZ / UART_BAUDRATE / 8 : 1)
     );
@@ -373,7 +368,7 @@ module top
       .sdram_rdata(cpu_sdram_rdata),
       .sdram_wmask(cpu_sdram_wmask),
 
-      .addr_o(mem_addr),
+      .bootrom_addr_o(bootrom_addr),
       .bootrom_data_i(bootrom_data)
     );
 
