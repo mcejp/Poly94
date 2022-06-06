@@ -162,9 +162,14 @@ int main() {
         else if (c == '\xAE') {
             Putc('e');
 
-            // flush all caches
+            // flush all caches + insert 5 NOPs as per https://github.com/SpinalHDL/VexRiscv/issues/137#issuecomment-695762747
             __asm__ volatile ("fence");
             __asm__ volatile ("fence.i");
+            __asm__ volatile ("nop");
+            __asm__ volatile ("nop");
+            __asm__ volatile ("nop");
+            __asm__ volatile ("nop");
+            __asm__ volatile ("nop");
 
             // wait while UART busy
             while (_HW.UART.STATUS & UART_STATUS_TX_BUSY) {
