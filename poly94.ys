@@ -10,8 +10,8 @@ read_verilog \
     rtl/Text_Generator.v \
     rtl/tmds_encoder.v \
     rtl/vga2dvid.v \
-    rtl/ip/sdram_pnru.v \
-    rtl/ip/VexRiscv.v
+    rtl/generated/VexRiscv.v \
+    rtl/ip/sdram_pnru.v
 read_verilog -noassert -sv \
     rtl/CPU_Rom.sv \
     rtl/Memory_Ctrl.sv \

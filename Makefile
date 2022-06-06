@@ -97,8 +97,8 @@ poly94.json: poly94.ys \
 		rtl/vga2dvid.v \
 		rtl/Video_Ctrl.sv \
 		rtl/ecp5/ecp5pll.sv \
+		rtl/generated/VexRiscv.v \
 		rtl/ip/sdram_pnru.v \
-		rtl/ip/VexRiscv.v \
 		build/boot_syn.vh
 	yosys -m ghdl poly94.ys | tee yosys.log
 
