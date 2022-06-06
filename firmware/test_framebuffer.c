@@ -10,14 +10,14 @@ int main() {
         }
     }
 
-    VIDEO_CTRL = VIDEO_CTRL_FB_EN;
+    _HW.VIDEO.CTRL = VIDEO_CTRL_FB_EN;
 
     // this is necessary to trigger the bug on hardware
     for (;;) {
         for (int y = 0; y < 240; y++) {
             for (int x = 0; x < 320; x++) {
                 sdram_x8[y * 320 + x] = y + x;
-                UART_STATUS;
+                _HW.UART.STATUS;
             }
         }
     }

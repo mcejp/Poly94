@@ -3,21 +3,16 @@
 
 #include <stdint.h>
 
+#include "top.h"
+
 /* memory map */
 
 enum { SDRAM_START          = 0x04000000 };
 
-/* I/O region (with cache bypass bit set) */
+/* Control/status registers (with cache bypass bit set) */
 
-#define UART_STATUS         (*(uint32_t volatile*)0x81000000)
-#define BG_COLOR            (*(uint32_t volatile*)0x81000004)
-#define UART_DATA           (*(uint32_t volatile*)0x81000008)
-#define VIDEO_CTRL          (*(uint32_t volatile*)0x8100000c)
+#define _HW (*(struct top volatile*)0x81000000)
 
-enum { UART_STATUS_TX_BUSY      = 0x01 };
-enum { UART_STATUS_RX_NOT_EMPTY = 0x02 };
-
-enum { VIDEO_CTRL_FB_EN     = 0x01 };
 
 /* RISC-V stuff */
 

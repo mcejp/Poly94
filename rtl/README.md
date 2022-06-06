@@ -1,0 +1,3 @@
+```
+make -f cheby.mk
+```

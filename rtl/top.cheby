@@ -1,0 +1,21 @@
+memory-map:
+  bus: wb-32-be
+  name: top
+  description: Poly94 control/status registers
+
+  x-hdl:
+    name-suffix: _regs
+
+  children:
+  - submap:
+      name: UART
+      address: 0x0010
+      description: An included submap
+      filename: uart.cheby
+      include: True
+  - submap:
+      name: VIDEO
+      address: 0x0020
+      description: An included submap
+      filename: video.cheby
+      include: True

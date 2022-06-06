@@ -19,18 +19,18 @@ static const char message[] = "Hello world from SDRAM!\r\n";
 #define MSG_LEN (sizeof(message) - 1)
 
 static int Getc(void) {
-    while (!(UART_STATUS & UART_STATUS_RX_NOT_EMPTY)) {
+    while (!(_HW.UART.STATUS & UART_STATUS_RX_NOT_EMPTY)) {
     }
 
-    return UART_DATA;
+    return _HW.UART.DATA;
 }
 
 static void Putc(char c) {
     // wait while UART busy
-    while (UART_STATUS & UART_STATUS_TX_BUSY) {
+    while (_HW.UART.STATUS & UART_STATUS_TX_BUSY) {
     }
 
-    UART_DATA = c;
+    _HW.UART.DATA = c;
 }
 
 static const char hex[] = "0123456789ABCDEF";
@@ -100,14 +100,14 @@ int main() {
 
     message_sdram_x32[100] = 0x12345678;
 
-    BG_COLOR = 0xffff00;
+    _HW.VIDEO.BG_COLOR = 0xffff00;
 
     for (;;) {
         Puth(message_sdram_x32[100]);
         Puts("\n\n");
 
         for (int i = 0; i < MSG_LEN; i++) {
-            BG_COLOR = (i & 0xff00);
+            _HW.VIDEO.BG_COLOR = (i & 0xff00);
 
             Putc(sdram_x8[i % MSG_LEN]);
         }
@@ -135,7 +135,7 @@ int main() {
     Puth(end - start);
     Puts(" cycles to fill framebuffer.\n");
 
-    VIDEO_CTRL = VIDEO_CTRL_FB_EN;      // bug: enabling fb_en in the middle of the frame leaves it with wrong SDRAM read ptr
+    _HW.VIDEO.CTRL = VIDEO_CTRL_FB_EN;      // bug: enabling fb_en in the middle of the frame leaves it with wrong SDRAM read ptr
 
     void* INIT_ADDR = (void*) SDRAM_START;      // this kills code that we put in SDRAM!
     uint8_t* addr = (uint8_t*) INIT_ADDR;
@@ -167,7 +167,7 @@ int main() {
             __asm__ volatile ("fence.i");
 
             // wait while UART busy
-            while (UART_STATUS & UART_STATUS_TX_BUSY) {
+            while (_HW.UART.STATUS & UART_STATUS_TX_BUSY) {
             }
 
             ((void (*)())(INIT_ADDR))();

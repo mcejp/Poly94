@@ -33,19 +33,9 @@ CPU external address bus is effectively 28 bits wide.
 
 ## Detailed description
 
-### System control registers
+### Control/status registers
 
-0x8100_0000  UART_STATUS
-  - read to see:
-    - if UART busy (1) or idle (0)
-    - Rx data ready (2) or no data
-
-0x8100_0004  BG_COLOR
-  - write to set background color (24-bit)
-
-0x8100_0008  UART_DATA
-  - read to get byte from UART Rx buffer
-  - write to send on UART (8 bits)
+See doc/generated/top.html.
 
 
 ---

@@ -1,4 +1,7 @@
 `default_nettype none
+`include "generated/top_inc.sv"
+`include "generated/uart_inc.sv"
+`include "generated/video_inc.sv"
 `include "VGA_Timing.sv"
 
 module top
@@ -421,8 +424,10 @@ module top
             bg_col <= 0;
             video_fb_en <= 1'b0;
         end else begin
+            // TODO: waste to also compare lowest 2 bits. enough to tie to 0 to optimize out?
+
             // write BG_COLOR
-            if (mem_io_write_valid && mem_io_addr[11:0] == 12'h004) begin
+            if (mem_io_write_valid && mem_io_addr[11:0] == top_regs_Consts::ADDR_TOP_VIDEO + video_Consts::ADDR_VIDEO_BG_COLOR) begin
                 $display("WRITE BG_COL %08X", mem_io_wdata);
                 if (mem_io_wdata != 0) begin
                     bg_col <= mem_io_wdata;
@@ -431,7 +436,7 @@ module top
             end
 
             // read UART_DATA
-            if (mem_io_read_valid && mem_io_addr[11:0] == 12'h008) begin
+            if (mem_io_read_valid && mem_io_addr[11:0] == top_regs_Consts::ADDR_TOP_UART + uart_Consts::ADDR_UART_DATA) begin
                 $display("READ UART RX");
                 uart_rx_strobe <= 1'b1;
             end else begin
@@ -439,7 +444,7 @@ module top
             end
 
             // write UART_DATA
-            if (mem_io_write_valid && mem_io_addr[11:0] == 12'h008) begin
+            if (mem_io_write_valid && mem_io_addr[11:0] == top_regs_Consts::ADDR_TOP_UART + uart_Consts::ADDR_UART_DATA) begin
                 // $display("WRITE CHAR '%c'", mem_io_wdata[7:0]);
 
                 uart_tx_strobe <= 1;
@@ -448,16 +453,16 @@ module top
 
             // write VIDEO CTRL
             // TODO: this needs to be readable too
-            if (mem_io_write_valid && mem_io_addr[11:2] == 10'h003) begin
+            if (mem_io_write_valid && mem_io_addr[11:0] == top_regs_Consts::ADDR_TOP_VIDEO + video_Consts::ADDR_VIDEO_CTRL) begin
                 $display("WRITE VIDEO CTRL %08X", mem_io_wdata);
                 video_fb_en <= mem_io_wdata[0];
             end
 
             //
-            if (mem_io_addr[11:0] == 12'h000) begin
+            if (mem_io_addr[11:0] == top_regs_Consts::ADDR_TOP_UART + uart_Consts::ADDR_UART_STATUS) begin
                 // read UART_STATUS
                 mem_io_rdata <= {30'h00000000, uart_rx_valid, uart_tx_busy};
-            end else if (mem_io_addr[11:0] == 12'h008) begin
+            end else if (mem_io_addr[11:0] == top_regs_Consts::ADDR_TOP_UART + uart_Consts::ADDR_UART_DATA) begin
                 // read UART_DATA
                 mem_io_rdata <= {24'h0, uart_rx_data};
             end else begin

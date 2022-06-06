@@ -1,0 +1,33 @@
+memory-map:
+  bus: wb-32-be
+  name: uart
+  description: Universal asynchronous receiver/transmitter
+  children:
+  - reg:
+      name: STATUS
+      access: ro
+      width: 32
+      children:
+      - field:
+          name: TX_BUSY
+          range: 0
+          description: Indicates whether the transmitter is busy (1) or ready to send data (0)
+      - field:
+          name: RX_NOT_EMPTY
+          range: 1
+          description: Indicates whether the receive FIFO (currently single-element) contains data received
+  - reg:
+      name: DATA
+      access: rw
+      width: 32
+      children:
+      - field:
+          name: DATA
+          range: 7-0
+          description: |
+            Read to pop byte from the receive FIFO (requiring RX_NOT_EMPTY == 1).
+            Write to send a character (requiring TX_BUSY == 0).
+            The transmission is always 8-bit.
+
+      # Note: there seems to be a bug in cheby where it does not take struct alignment
+      # into account when the last element of a submap is less than word size
