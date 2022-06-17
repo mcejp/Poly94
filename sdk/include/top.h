@@ -1,9 +1,15 @@
 #ifndef __CHEBY__TOP__H__
 #define __CHEBY__TOP__H__
 
+#include "sys.h"
 #include "uart.h"
 #include "video.h"
 #define TOP_SIZE 48 /* 0x30 */
+
+/* An included submap */
+#define TOP_SYS 0x0UL
+#define ADDR_MASK_TOP_SYS 0x30UL
+#define TOP_SYS_SIZE 16 /* 0x10 */
 
 /* An included submap */
 #define TOP_UART 0x10UL
@@ -16,9 +22,12 @@
 #define TOP_VIDEO_SIZE 16 /* 0x10 */
 
 struct top {
+  /* [0x0]: SUBMAP An included submap */
+  struct sys SYS;
 
   /* padding to: 4 words */
-  uint32_t __padding_0[4];
+  uint32_t __padding_0[1];
+
   /* [0x10]: SUBMAP An included submap */
   struct uart UART;
 

@@ -20,4 +20,7 @@ enum { SDRAM_START          = 0x04000000 };
     asm volatile ("csrr %0, " #reg : "=r"(__tmp)); \
     __tmp; })
 
+#define write_csr(reg, val) ({ \
+  asm volatile ("csrw " #reg ", %0" :: "rK"(val)); })
+
 #endif

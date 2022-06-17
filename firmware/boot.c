@@ -81,6 +81,18 @@ void UART_Echo(void) {
     }
 }
 
+// TODO: this should come from a header
+#define MSTATUS_MIE         0x00000008
+
+void __attribute__((interrupt)) interrupt_handler() {
+    Putc('!');
+    Puth(_HW.SYS.IP);
+    _HW.SYS.IP = _HW.SYS.IP;        // ack all ... probably shouldn't do that
+    Puth(_HW.SYS.IP);
+    Puth(read_csr(mip));
+    Putc('\n');
+}
+
 int main() {
     // TRACE_REG = 'H';
     // TRACE_REG = 'e';
@@ -88,6 +100,12 @@ int main() {
     // TRACE_REG = 'l';
     // TRACE_REG = 'o';
     // TRACE_REG = '\n';
+
+    // write_csr(mtvec, (uint32_t)(&interrupt_handler) & ~3);
+    // write_csr(mie, read_csr(mie) | (1 << 11));  // enable ext interrupts
+    // write_csr(mstatus, read_csr(mstatus) | MSTATUS_MIE);  // enable interrupts
+
+    // _HW.SYS.IE |= SYS_IE_VSYNC | SYS_IE_HSYNC;
 
     for (int i = 0; i < MSG_LEN; i++) {
         sdram_x8[i] = message[i];

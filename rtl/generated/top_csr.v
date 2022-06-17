@@ -15,6 +15,21 @@ module top_csr
     output  wire wb_stall_o,
     output  reg [31:0] wb_dat_o,
 
+    // Interrupt enable
+    // HSYNC interrupt enabled
+    output  wire SYS_IE_HSYNC_o,
+    // VSYNC interrupt enabled
+    output  wire SYS_IE_VSYNC_o,
+
+    // Interrupt pending
+    // HSYNC interrupt pending
+    input   wire SYS_IP_HSYNC_i,
+    output  wire SYS_IP_HSYNC_o,
+    // VSYNC interrupt pending
+    input   wire SYS_IP_VSYNC_i,
+    output  wire SYS_IP_VSYNC_o,
+    output  wire SYS_IP_wr_o,
+
     // REG STATUS
     // Indicates whether the transmitter is busy (1) or ready to send data (0)
     input   wire UART_STATUS_TX_BUSY_i,
@@ -53,6 +68,11 @@ module top_csr
   wire ack_int;
   reg wb_rip;
   reg wb_wip;
+  reg SYS_IE_HSYNC_reg;
+  reg SYS_IE_VSYNC_reg;
+  reg SYS_IE_wreq;
+  reg SYS_IE_wack;
+  reg SYS_IP_wreq;
   reg UART_DATA_wreq;
   reg VIDEO_CTRL_FB_EN_reg;
   reg VIDEO_CTRL_wreq;
@@ -113,6 +133,35 @@ module top_csr
       end
   end
 
+  // Register SYS_DEBUG
+
+  // Register SYS_IE
+  assign SYS_IE_HSYNC_o = SYS_IE_HSYNC_reg;
+  assign SYS_IE_VSYNC_o = SYS_IE_VSYNC_reg;
+  always @(posedge(clk_i) or negedge(rst_n_i))
+  begin
+    if (!rst_n_i)
+      begin
+        SYS_IE_HSYNC_reg <= 1'b0;
+        SYS_IE_VSYNC_reg <= 1'b0;
+        SYS_IE_wack <= 1'b0;
+      end
+    else
+      begin
+        if (SYS_IE_wreq == 1'b1)
+          begin
+            SYS_IE_HSYNC_reg <= wr_dat_d0[0];
+            SYS_IE_VSYNC_reg <= wr_dat_d0[1];
+          end
+        SYS_IE_wack <= SYS_IE_wreq;
+      end
+  end
+
+  // Register SYS_IP
+  assign SYS_IP_HSYNC_o = wr_dat_d0[0];
+  assign SYS_IP_VSYNC_o = wr_dat_d0[1];
+  assign SYS_IP_wr_o = SYS_IP_wreq;
+
   // Register UART_STATUS
 
   // Register UART_DATA
@@ -166,12 +215,29 @@ module top_csr
   // Register VIDEO_FB_SIZE
 
   // Process for write requests.
-  always @(wr_adr_d0, wr_req_d0, VIDEO_CTRL_wack, VIDEO_BG_COLOR_wack)
+  always @(wr_adr_d0, wr_req_d0, SYS_IE_wack, VIDEO_CTRL_wack, VIDEO_BG_COLOR_wack)
       begin
+        SYS_IE_wreq <= 1'b0;
+        SYS_IP_wreq <= 1'b0;
         UART_DATA_wreq <= 1'b0;
         VIDEO_CTRL_wreq <= 1'b0;
         VIDEO_BG_COLOR_wreq <= 1'b0;
         case (wr_adr_d0[5:2])
+        4'b0000:
+          // Reg SYS_DEBUG
+          wr_ack_int <= wr_req_d0;
+        4'b0001:
+          begin
+            // Reg SYS_IE
+            SYS_IE_wreq <= wr_req_d0;
+            wr_ack_int <= SYS_IE_wack;
+          end
+        4'b0010:
+          begin
+            // Reg SYS_IP
+            SYS_IP_wreq <= wr_req_d0;
+            wr_ack_int <= wr_req_d0;
+          end
         4'b0100:
           // Reg UART_STATUS
           wr_ack_int <= wr_req_d0;
@@ -205,12 +271,34 @@ module top_csr
       end
 
   // Process for read requests.
-  always @(wb_adr_i, rd_req_int, UART_STATUS_TX_BUSY_i, UART_STATUS_RX_NOT_EMPTY_i, UART_DATA_DATA_i, VIDEO_CTRL_FB_EN_reg, VIDEO_BG_COLOR_B_reg, VIDEO_BG_COLOR_G_reg, VIDEO_BG_COLOR_R_reg)
+  always @(wb_adr_i, rd_req_int, SYS_IE_HSYNC_reg, SYS_IE_VSYNC_reg, SYS_IP_HSYNC_i, SYS_IP_VSYNC_i, UART_STATUS_TX_BUSY_i, UART_STATUS_RX_NOT_EMPTY_i, UART_DATA_DATA_i, VIDEO_CTRL_FB_EN_reg, VIDEO_BG_COLOR_B_reg, VIDEO_BG_COLOR_G_reg, VIDEO_BG_COLOR_R_reg)
       begin
         // By default ack read requests
         rd_dat_d0 <= {32{1'bx}};
         UART_DATA_rd_o <= 1'b0;
         case (wb_adr_i[5:2])
+        4'b0000:
+          begin
+            // Reg SYS_DEBUG
+            rd_ack_d0 <= rd_req_int;
+            rd_dat_d0 <= 32'b00000000000000000000000000000000;
+          end
+        4'b0001:
+          begin
+            // Reg SYS_IE
+            rd_ack_d0 <= rd_req_int;
+            rd_dat_d0[0] <= SYS_IE_HSYNC_reg;
+            rd_dat_d0[1] <= SYS_IE_VSYNC_reg;
+            rd_dat_d0[31:2] <= 30'b0;
+          end
+        4'b0010:
+          begin
+            // Reg SYS_IP
+            rd_ack_d0 <= rd_req_int;
+            rd_dat_d0[0] <= SYS_IP_HSYNC_i;
+            rd_dat_d0[1] <= SYS_IP_VSYNC_i;
+            rd_dat_d0[31:2] <= 30'b0;
+          end
         4'b0100:
           begin
             // Reg UART_STATUS

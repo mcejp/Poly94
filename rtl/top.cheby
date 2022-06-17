@@ -9,6 +9,12 @@ memory-map:
 
   children:
   - submap:
+      name: SYS
+      address: 0x0000
+      description: An included submap
+      filename: sys.cheby
+      include: True
+  - submap:
       name: UART
       address: 0x0010
       description: An included submap

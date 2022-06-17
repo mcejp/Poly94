@@ -40,10 +40,10 @@ memory-map:
   - reg:
       name: FB_POS
       description: Framebuffer position in screen pixels; placeholder for future implementation
-
       access: ro
       width: 32
       x-hdl: {type: const}
+
       children:
       - field:
           name: Y
@@ -59,10 +59,10 @@ memory-map:
   - reg:
       name: FB_SIZE
       description: Framebuffer dimensions and scaling; placeholder for future implementation
-
       access: ro
       width: 32
       x-hdl: {type: const}
+
       children:
       - field:
           name: YSCALE

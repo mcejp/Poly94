@@ -1,4 +1,5 @@
 `default_nettype none
+`include "interrupts.sv"
 `include "memory_map.sv"
 `include "VGA_Timing.sv"
 
@@ -77,6 +78,12 @@ module top
     logic       csr_ack;
     logic       csr_stall;
     logic[31:0] csr_dat_o;
+
+    logic[INT_MAX-1:0]      SYS_IE;         // interrupt enable word
+    logic[INT_MAX-1:0]      SYS_IP;         // interrupt flags word
+    logic[INT_MAX-1:0]      SYS_IP_cpu;
+    logic                   SYS_IP_wr;
+    logic                   cpu_external_interrupt;
 
     wire VGA_Timing timing0;
     wire VGA_Timing timing1         /* verilator public */;
@@ -228,7 +235,7 @@ module top
         .iBus_rsp_payload_error('0),
 
         .timerInterrupt('0),
-        .externalInterrupt('0),
+        .externalInterrupt(cpu_external_interrupt),
         .softwareInterrupt('0)
     );
 
@@ -390,6 +397,16 @@ module top
         .wb_stall_o(csr_stall),
         .wb_dat_o(csr_dat_o),
 
+        .SYS_IE_HSYNC_o(SYS_IE[INT_HSYNC]),
+        .SYS_IE_VSYNC_o(SYS_IE[INT_VSYNC]),
+
+        .SYS_IP_HSYNC_i(SYS_IP[INT_HSYNC]),
+        .SYS_IP_HSYNC_o(SYS_IP_cpu[INT_HSYNC]),
+        .SYS_IP_VSYNC_i(SYS_IP[INT_VSYNC]),
+        .SYS_IP_VSYNC_o(SYS_IP_cpu[INT_VSYNC]),
+
+        .SYS_IP_wr_o(SYS_IP_wr),
+
         .UART_STATUS_TX_BUSY_i(uart_tx_busy),
         .UART_STATUS_RX_NOT_EMPTY_i(uart_rx_valid),
 
@@ -403,6 +420,29 @@ module top
         .VIDEO_BG_COLOR_R_o(bg_col[23:16]),
         .VIDEO_BG_COLOR_G_o(bg_col[15:8]),
         .VIDEO_BG_COLOR_B_o(bg_col[7:0])
+    );
+
+    logic[$left(SYS_IP):0] interrupts_to_set;
+    logic[$left(SYS_IP):0] interrupts_to_clear;
+
+    always_comb begin
+        interrupts_to_set[INT_VSYNC] = (timing1.end_of_frame == 1);
+        interrupts_to_set[INT_HSYNC] = (timing1.end_of_line == 1);
+
+        interrupts_to_clear = SYS_IP_wr ? SYS_IP_cpu : '0;
+    end
+
+    Interrupt_Ctrl #(.NUM_INT(INT_MAX)) int_inst(
+        .clk_i(clk_sys),
+        .rst_i(~reset_n),
+
+        .enabled_i(SYS_IE),
+
+        .set_strobe_i(interrupts_to_set),
+        .clear_strobe_i(interrupts_to_clear),
+
+        .interrupts_pending_o(SYS_IP),
+        .any_pending_o(cpu_external_interrupt)
     );
 
     // System control

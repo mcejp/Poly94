@@ -1,0 +1,46 @@
+memory-map:
+  word-endian: little
+  name: sys
+
+  children:
+  - reg:
+      name: DEBUG
+      description: TODO
+      access: ro
+      width: 32
+      x-hdl: {type: const}
+      preset: 0
+
+  - reg:
+      name: IE
+      description: Interrupt enable
+      access: rw
+      width: 32
+
+      children:
+      - field:
+          name: HSYNC
+          range: 0
+          description: HSYNC interrupt enabled
+      - field:
+          name: VSYNC
+          range: 1
+          description: VSYNC interrupt enabled
+
+  - reg:
+      name: IP
+      description: Interrupt pending
+      access: rw
+      width: 32
+      # x-hdl: {type: or-clr}
+      x-hdl: {type: wire, write-strobe: true}
+
+      children:
+      - field:
+          name: HSYNC
+          range: 0
+          description: HSYNC interrupt pending
+      - field:
+          name: VSYNC
+          range: 1
+          description: VSYNC interrupt pending

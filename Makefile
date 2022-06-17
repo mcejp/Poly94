@@ -86,6 +86,7 @@ poly94.json: poly94.ys \
 		rtl/CPU_Rom.sv \
 		rtl/fake_differential.v \
 		rtl/hdmi_video.v \
+		rtl/Interrupt_Ctrl.sv \
 		rtl/Memory_Ctrl.sv \
 		rtl/pll.v \
 		rtl/RGB_Color_Bars_Generator.v \

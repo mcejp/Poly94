@@ -16,6 +16,7 @@ read_verilog \
     rtl/ip/sdram_pnru.v
 read_verilog -noassert -sv \
     rtl/CPU_Rom.sv \
+    rtl/Interrupt_Ctrl.sv \
     rtl/Memory_Ctrl.sv \
     rtl/Sdram_Arbiter.sv \
     rtl/top.sv \

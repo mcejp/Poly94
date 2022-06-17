@@ -12,6 +12,7 @@ VERILOG_SOURCES += \
 		lib/verilog-uart/rtl/uart.v \
 		rtl/clk_25_250_125_25.v \
 		rtl/CPU_Rom.sv \
+		rtl/Interrupt_Ctrl.sv \
 		rtl/Memory_Ctrl.sv \
 		rtl/memory_map.sv \
 		rtl/pll.v \
