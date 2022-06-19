@@ -17,6 +17,7 @@ import json
 import logging
 import os
 
+from junitparser import JUnitXml
 import psycopg
 
 
@@ -30,17 +31,27 @@ results["commit_title"] = os.environ["CI_COMMIT_TITLE"]
 
 # Results of simulation
 
-try:
-    with open("results.xml", "rt") as f:
-        xml = f.read()
+if os.path.exists("results.xml"):       # ugh. fromfile() raises generic OSError
+                                        # instead of FileNotFoundError
+    xml = JUnitXml.fromfile("results.xml")
 
-    if "<failure" not in xml:
+    failures = []
+
+    for suite in xml:
+        for case in suite:
+            if any(r._tag == "failure" for r in case.result):
+                logger.info("%s:%s FAIL", case.classname, case.name)
+                failures.append(case.classname + ":" + case.name)
+            else:
+                logger.info("%s:%s PASS", case.classname, case.name)
+
+    if len(failures) > 0:
+        logger.info("cocotb FAIL")
+        results["sim"] = dict(result="fail", failed_testcases=failures)
+    else:
         logger.info("cocotb PASS")
         results["sim"] = dict(result="pass")
-    else:
-        logger.info("cocotb FAIL")
-        results["sim"] = dict(result="fail")
-except FileNotFoundError:
+else:
     logger.error("results.xml not found")
     results["sim"] = dict(result=None)
 

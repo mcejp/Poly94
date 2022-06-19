@@ -79,7 +79,13 @@ td.success { background-color: rgb(25, 135, 84); color: #fff; font-weight: 600 }
       {% if build.sim.result == "pass" %}
       <td style="text-align: center" class="success">PASS</td>
       {% elif build.sim.result == "fail" %}
-      <td style="text-align: center" class="error">FAIL</td>
+      <td style="text-align: center" class="error">
+        {% if build.sim.failed_testcases | default(None) %}
+        <abbr title="Failed testcases:&#x0A;{{ build.sim.failed_testcases | join("\n") }}">FAIL</abbr>
+        {% else %}
+        FAIL
+        {% endif %}
+      </td>
       {% else %}
       <td style="text-align: center">?</td>
       {% endif %}

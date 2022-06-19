@@ -93,7 +93,7 @@ reports:
   image: python:3.10
 
   script:
-    - pip install "psycopg>=3"
+    - pip install junitparser "psycopg>=3"
     - ./tools/ci/save_build_stats.py
 
 
