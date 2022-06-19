@@ -2,6 +2,9 @@
 
 ![snapshot](_img/snapshot.jpg)
 
+![Fmax badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fmcejp.gitlab.io%2FPoly94%2Ffmax.json)
+![Benchmark badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fmcejp.gitlab.io%2FPoly94%2Fdmips.json)
+
 ## Connecting ULX3S
 
 You need to connect to USB1 (US1) connector to the host computer in order to program the board.

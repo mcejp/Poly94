@@ -34,3 +34,21 @@ Path("builds.html").write_text(template.render(
     builds=builds,
     project_url=os.environ["CI_PROJECT_URL"]
     ))
+
+# Generate badges
+# TODO: these should take information from "last successful build on master" or something like that, rather than just last build overall
+reference_build = builds[0]
+reference_clk = "$glbnet$clk_sys"
+
+try:
+    fmax_str = "%.1f MHz" % reference_build["build"]["fmax"][reference_clk]["achieved"]
+except:
+    fmax_str = "unknown"
+
+try:
+    dmips_str = "%.1f DMIPS" % reference_build["benchmark"]["dmips"]
+except:
+    dmips_str = "unknown"
+
+Path("fmax.json").write_text(json.dumps(dict(schemaVersion=1, label="Fmax", message=fmax_str, color="orange")))
+Path("dmips.json").write_text(json.dumps(dict(schemaVersion=1, label="Benchmark", message=dmips_str, color="blueviolet")))
