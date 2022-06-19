@@ -2,6 +2,7 @@
 
 import json
 import os
+from pathlib import Path
 import sys
 
 import jinja2
@@ -29,7 +30,7 @@ env = jinja2.Environment(
 
 template = env.get_template("build_stats.html")
 
-sys.stdout.write(template.render(
+Path("builds.html").write_text(template.render(
     builds=builds,
     project_url=os.environ["CI_PROJECT_URL"]
     ))

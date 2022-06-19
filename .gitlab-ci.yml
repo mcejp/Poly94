@@ -105,8 +105,9 @@ pages:
 
   script:
     - mkdir public
+    - cd public
     - pip install Jinja2 "psycopg>=3"
-    - ./tools/ci/present_build_stats.py > public/builds.html
+    - ../tools/ci/present_build_stats.py
 
   artifacts:
     paths:
