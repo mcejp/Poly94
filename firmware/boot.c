@@ -81,7 +81,7 @@ void UART_Echo(void) {
     }
 }
 
-// TODO: this should come from a header
+// TODO: this should come from https://github.com/riscv-software-src/riscv-pk/blob/master/machine/encoding.h
 #define MSTATUS_MIE         0x00000008
 
 void __attribute__((interrupt)) interrupt_handler() {
