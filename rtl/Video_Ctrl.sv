@@ -123,7 +123,7 @@ always @ (posedge clk_i) begin
       end
     end else if (sdram_rd && sdram_rdy && waitstate == 0) begin
 `ifdef VERBOSE
-      $display("VIDEO_CTRL: got data word [%03d] => %04Xh", line_write_ptr, sdram_rdata);
+      $display("VIDEO_CTRL: got data word [%03d:%03d] => %04Xh", line_no, line_write_ptr, sdram_rdata);
 `endif
       if (line_write_ptr[BURST_BITS-1:0] == BURST_LEN - 1) begin
 `ifdef VERBOSE

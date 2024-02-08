@@ -33,6 +33,9 @@ make prog
 # Verilator (currently not working with SDRAM model)
 make sim
 
+# Verilator with options
+BOOTROM=firmware/build/test_framebuffer.bin DUMP_FRAMEBUF=framebuffer.ppm NUM_CYCLES=4000000 make sim
+
 # cocotb
 make -f Makefile.coco
 ```

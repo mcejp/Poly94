@@ -31,7 +31,7 @@ module top
     parameter CLK_SYS_HZ = 50_000_000;
 
 `ifndef SYNTHESIS
-    wire pixel_valid /* verilator public */ = timing1.blank_n == 1 && timing1.valid;
+    wire pixel_valid /* verilator public */ = (timing1.blank_n == 1) && timing1.valid;
 `endif
 
     assign sdram_cke = 1'b1;

@@ -39,8 +39,8 @@ localparam V_BACK_PORCH = 31;
 localparam V_TOTAL = V_VISIBLE + V_FRONT_PORCH + 2 + V_BACK_PORCH;
 
 // Clock divider; probably should be externalized
-logic[$clog2(CLK_DIV)-1:0] prescaler;
-logic clk_en;       // pipelined to minimize extra cost
+logic[$clog2(CLK_DIV)-1:0] prescaler = 0;
+logic clk_en = 0;       // pipelined to minimize extra cost
 
 // Line/pixel counting
 

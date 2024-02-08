@@ -54,9 +54,8 @@ int main(int argc, char** argv, char** env) {
    // top.rootp->cpu.resetn = 0;
 
    VerilatedVcdC trace;
-   top.trace(&trace, 99);
 
-   // trace.open("sim.vcd");
+   top.trace(&trace, 99);
 
    // execute $initial commands -- must be done before loading ROM or forcing any registers
    top.eval();
@@ -112,6 +111,12 @@ int main(int argc, char** argv, char** env) {
          framebuffer[pixel_i] = top.top->color2;
          pixel_i++;
       }
+
+      // if (half_cycle == 1000000) {
+      //    ;
+
+      //    trace.open("sim.vcd");
+      // }
    }
 
    fprintf(stderr, "Simulated %ld cycles\n", half_cycle / 2);

@@ -10,3 +10,7 @@
 | 100 MHz      | 640x480 /8             | 9.2 %                            |
 
 Justifies having separate code RAM to do something in the meantime?
+
+
+TODO: profile access latency
+TODO: render waveforms
