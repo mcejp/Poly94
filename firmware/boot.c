@@ -55,12 +55,6 @@ void Puts(const char* str) {
     }
 }
 
-static uint32_t rdcyclel() {
-    uint32_t val;
-    __asm__ volatile ("rdcycle %0" : "=r" (val));
-    return val;
-}
-
 void UART_Echo(void) {
     Puts("\n> ");
 
