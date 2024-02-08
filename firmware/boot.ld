@@ -7,9 +7,6 @@ MEMORY
 
 __stack = ORIGIN(RAM) + LENGTH(RAM);
 
-PROVIDE ( _Heap_Begin = _end_noinit ) ;
-PROVIDE ( _Heap_Limit = __stack - __Main_Stack_Size ) ;
-
 ENTRY(_boot)
 
 SECTIONS
@@ -50,12 +47,14 @@ SECTIONS
     {
         *(.text .text.*)            /* all remaining code */
  
-        /* read-only data (constants) */
-        *(.rodata .rodata.* .constdata .constdata.*)        
-
-        *(vtable)                   /* C++ virtual tables */
-
-        KEEP(*(.eh_frame*))
+        *(.rdata)
+        *(.rodata .rodata.*)
+        . = ALIGN(8);
+        *(.srodata.cst16)
+        *(.srodata.cst8)
+        *(.srodata.cst4)
+        *(.srodata.cst2)
+        *(.srodata .srodata.*)
     } >ROM
 
     .text_sdram : ALIGN(4)
@@ -75,6 +74,7 @@ SECTIONS
         *(.data_begin .data_begin.*)
 
         *(.data .data.*)
+        *(.sdata .sdata.* .sdata2.*)
         
         *(.data_end .data_end.*)
         . = ALIGN(4);
@@ -90,6 +90,7 @@ SECTIONS
         __bss_start__ = .;      /* standard newlib definition */
         *(.bss_begin .bss_begin.*)
 
+        *(.sbss*)
         *(.bss .bss.*)
         *(COMMON)
         
@@ -99,4 +100,6 @@ SECTIONS
     } >RAM
 
     . = ALIGN(4);
+
+    end = ORIGIN(RAM);
 }
