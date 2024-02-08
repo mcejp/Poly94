@@ -44,10 +44,19 @@ add_executable(demo_hello_world
     stdio.c
     )
 
+add_executable(demo_memory_latency
+    start.s
+    demos/memory_latency/MemoryLatency.c
+    demos/memory_latency/MemoryLatency_rv32.s
+    stdio.c
+    )
+
 foreach(TARGET boot boot_sdram demo_hello_world test_framebuffer)
     target_postprocess(${TARGET})
     target_link_options(${TARGET} PRIVATE "-T" "${CMAKE_CURRENT_SOURCE_DIR}/boot.ld")
 endforeach()
 
-target_postprocess(test_dhrystone)
-target_link_options(test_dhrystone PRIVATE "-T" "${CMAKE_CURRENT_SOURCE_DIR}/sdram.ld")
+foreach(TARGET demo_memory_latency test_dhrystone)
+    target_postprocess(${TARGET})
+    target_link_options(${TARGET} PRIVATE "-T" "${CMAKE_CURRENT_SOURCE_DIR}/sdram.ld")
+endforeach()

@@ -11,6 +11,10 @@
 
 Justifies having separate code RAM to do something in the meantime?
 
+## Memory latency
 
-TODO: profile access latency
-TODO: render waveforms
+Data can be read from the 4-kilobyte data cache in 3 cycles, but SDRAM access is _very_ slow.
+
+![memory latency plot](memory-latency.png)
+
+TODO: render access waveforms

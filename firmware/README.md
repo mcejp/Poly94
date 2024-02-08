@@ -12,3 +12,5 @@ cmake --build firmware/build
 - `demo_hello_world`
 - `test_dhrystone`
 - `test_framebuffer`
+
+Note that ROM programs are limited to 4 KiB.
