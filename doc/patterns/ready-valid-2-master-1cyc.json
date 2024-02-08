@@ -1,0 +1,10 @@
+{signal: [
+  {name: 'clk', wave: 'p.......'},
+  {name: "valid1_i", wave: "01.0....."},
+  {name: "valid2_i", wave: "01...0..."},
+  {name: "ready1_o", wave: "0.1010.1."},
+  {name: "ready2_o", wave: "0...10.1."},
+  {name: "valid1_o", wave: "0...10..."},
+  {name: "valid2_o", wave: "0......10"},
+  {name: "busy",     wave: "1.0101.0."},
+]}
