@@ -9,5 +9,6 @@ cmake --build firmware/build
 
 - `boot`: Default UART ROM bootloader
 - `boot_sdram`: Stub to jump to program in SDRAM (mainly for simulation with program pre-loaded)
+- `demo_hello_world`
 - `test_dhrystone`
 - `test_framebuffer`

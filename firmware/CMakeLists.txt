@@ -38,11 +38,16 @@ add_executable(test_framebuffer
     test_framebuffer.c
     )
 
-target_postprocess(boot)
-target_link_options(boot PRIVATE "-T" "${CMAKE_CURRENT_SOURCE_DIR}/boot.ld")
-target_postprocess(boot_sdram)
-target_link_options(boot_sdram PRIVATE "-T" "${CMAKE_CURRENT_SOURCE_DIR}/boot.ld")
+add_executable(demo_hello_world
+    start.s
+    demos/hello_world/main.c
+    stdio.c
+    )
+
+foreach(TARGET boot boot_sdram demo_hello_world test_framebuffer)
+    target_postprocess(${TARGET})
+    target_link_options(${TARGET} PRIVATE "-T" "${CMAKE_CURRENT_SOURCE_DIR}/boot.ld")
+endforeach()
+
 target_postprocess(test_dhrystone)
 target_link_options(test_dhrystone PRIVATE "-T" "${CMAKE_CURRENT_SOURCE_DIR}/sdram.ld")
-target_postprocess(test_framebuffer)
-target_link_options(test_framebuffer PRIVATE "-T" "${CMAKE_CURRENT_SOURCE_DIR}/boot.ld")
