@@ -2,6 +2,8 @@
 
 ![snapshot](_img/snapshot.jpg)
 
+![architecture](_img/poly94_architecture.png)
+
 ![Fmax badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fmcejp.gitlab.io%2FPoly94%2Ffmax.json)
 ![Benchmark badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fmcejp.gitlab.io%2FPoly94%2Fdmips.json)
 
