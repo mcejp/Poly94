@@ -34,7 +34,7 @@ module sdram_pnru (
   // (ulx3s v3.1.7: IS42S16160G-7TL)
 
   // SDRAM timing parameters
-  localparam tRP = 3, tMRD = 2, tRCD = 3, tRC = 9, CL = 3;
+  localparam tRP = 3, tMRD = 2, tRCD = 3, tRC = 9, CL = 2;
   `ifdef SYNTHESIS
   localparam INITLEN = 12500 / 5; // 125 * 100us;
   `else
@@ -84,8 +84,8 @@ module sdram_pnru (
   localparam NOP  = 4'b1000, PRECHRG = 4'b0001, AUTORFRSH = 4'b0100, MODESET = 4'b0000,
              READ = 4'b0110, WRITE   = 4'b0010, ACTIVATE  = 4'b0101, BURST_STOP = 4'b0011;
 
-  // SDRAM mode register: single word reads & writes, CL=3, sequential access, full page burst
-  localparam MODE = 13'b000_1_00_011_0_111;
+  // SDRAM mode register: single word reads & writes, CL=2, sequential access, full page burst
+  localparam MODE = 13'b000_1_00_010_0_111;
   
   always @(posedge sys_clk)
   begin

@@ -13,7 +13,7 @@ f, ax = plt.subplots(figsize=(10, 6.5))
 line_opts = dict(ls="--", c="k")
 text_opts = dict(weight="bold")
 
-h_lines = [3, 23, 182]
+h_lines = [3, 21, 165]
 
 for y in h_lines:
     ax.axhline(y, **line_opts)
@@ -28,8 +28,8 @@ for i, d in enumerate(datasets):
             color=d["color"],
             marker=".")
 
-ax.axhline(22.98, lw=2, label="load 16-bit uncached", color="C1")
-ax.axhline(22.97, lw=2, label="load 32-bit uncached", color="C2")
+ax.axhline(20.87, lw=2, label="load 16-bit uncached", color="C1")
+ax.axhline(20.87, lw=2, label="load 32-bit uncached", color="C2")
 ax.axhline(8.80, lw=2, label="store 16-bit", color="C3")
 ax.axhline(16.39, lw=2, label="store 32-bit", color="C4")
 

@@ -205,6 +205,7 @@ module top
     //    However, it may be asserted even while dBus_cmd_ready and it will sit around and wait until cmd_ready=1 to clear itself
     //  - dBus_rsp_valid must be strobed for a single cycle when data is valid and ONLY WHEN READING!
     //  - *Bus_cmd_payload_size is log2 of the size in bytes. Note, however, that the interface always operates in units of 32 bits.
+    //      WAIT what. Surely that only appies to cache fills, right?
     //  - as the commands are pipelined, all parameters of the transaction must be latched at cmd_valid=1
     //  - _last signals seem to be convenience for AXI adapters and otherwise unused
     //
