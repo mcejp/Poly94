@@ -9,7 +9,7 @@
 .global test_latency_ld16
 .global test_latency_ld32
 
-.align 12
+.balign 4096
 
 /* a0 = ptr to arr
    a1 = arr len
@@ -30,11 +30,10 @@ preplatencyarr_loop:
 
   ret
 
-.align 5
-
 /* a0 = iteration count
    a1 = ptr to arr
    do pointer chasing for specified iteration count */
+.balign 32
 latencytest:
   # t0 = iteration counter
   li t0, 0
@@ -66,11 +65,10 @@ preplatencyarr16_loop:
 
   ret
 
-.align 5
-
 /* a0 = iteration count
    a1 = ptr to arr
    do pointer chasing for specified iteration count */
+.balign 32
 latencytest16:
   # t0 = iteration counter
   # t1 = current position (in bytes)
@@ -90,7 +88,7 @@ latencytest16_loop:
 # write a bunch of addresses, spaced by cache line size
 # a0 = 512-byte buffer
 # a1 = num. iterations
-.align 5
+.balign 32
 test_latency_st16:
 
 test_latency_st16_loop:
@@ -140,7 +138,7 @@ test_latency_st16_loop:
 # write a bunch of addresses, spaced by cache line size
 # a0 = 512-byte buffer
 # a1 = num. iterations
-.align 5
+.balign 32
 test_latency_st32:
 
 test_latency_st32_loop:
@@ -190,7 +188,7 @@ test_latency_st32_loop:
 # read a bunch of addresses, spaced by cache line size
 # a0 = 512-byte buffer
 # a1 = num. iterations
-.align 5
+.balign 32
 test_latency_ld16:
 
 test_latency_ld16_loop:
@@ -240,7 +238,7 @@ test_latency_ld16_loop:
 # read a bunch of addresses, spaced by cache line size
 # a0 = 512-byte buffer
 # a1 = num. iterations
-.align 5
+.balign 32
 test_latency_ld32:
 
 test_latency_ld32_loop:
