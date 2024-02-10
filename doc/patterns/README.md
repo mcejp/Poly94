@@ -16,6 +16,8 @@ end
 
 ## Single-master READY-VALID interface, 1-cycle turnaround
 
+Background: http://www.cjdrake.com/readyvalid-protocol-primer.html
+
 In general: master should assume that slave sets `ready` as a combinatorial function of inputs
             (for example, it might be ready to accept a write, but not a read).
 

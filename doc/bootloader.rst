@@ -2,7 +2,7 @@
 Bootloader
 ==========
 
-The boot ROM contains a very crappy UART bootloader. Use it like this:
+The boot ROM contains a very crappy UART bootloader. Use it like this::
 
     make ulx3s.bit
     make prog

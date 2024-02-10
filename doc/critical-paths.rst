@@ -2,4 +2,4 @@
 Critical paths
 ==============
 
-- CPU: I-cache -> decoder (INSTRUCTION_ANTICIPATED) -> regFile
+- CPU: I-cache -> decoder (INSTRUCTION_ANTICIPATED) -> regFile (?? ns)
