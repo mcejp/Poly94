@@ -10,12 +10,24 @@
 #include <array>
 #include <sstream>
 
+// As long as Verilator forces GNU++14...
+#include "optional.hpp"
 
 // SDRAM size
 #define SDRAM_BIT_ROWS     (13)
 #define SDRAM_BIT_COLS     (9)
 #define SDRAM_SIZE         (2 << (SDRAM_BIT_ROWS + SDRAM_BIT_COLS + SDRAM_BIT_BANKS))
 
+
+tl::optional<long> stol_nullable(const char* str) {
+   // return str ? std::stol(str) : tl::nullopt;
+   if (str) {
+      return std::stol(str);
+   }
+   else {
+      return tl::nullopt;
+   }
+}
 
 int main(int argc, char** argv, char** env) {
    Verilated::commandArgs(argc, argv);
@@ -26,6 +38,8 @@ int main(int argc, char** argv, char** env) {
    auto maybe_framebuffer_dump_filename = getenv("DUMP_FRAMEBUF");
    auto maybe_num_cycles_str = getenv("NUM_CYCLES");
    auto maybe_sdram_preload = getenv("SDRAM_PRELOAD");
+   auto maybe_trace_start = stol_nullable(getenv("TRACE_START"));
+   auto maybe_trace_end = stol_nullable(getenv("TRACE_END"));
 
    //
 
@@ -112,11 +126,17 @@ int main(int argc, char** argv, char** env) {
          pixel_i++;
       }
 
-      // if (half_cycle == 1000000) {
-      //    ;
+      if (maybe_trace_start.has_value() && half_cycle == *maybe_trace_start * 2)
+      {
+         fprintf(stderr, "Open trace\n");
+         trace.open("sim.vcd");
+      }
 
-      //    trace.open("sim.vcd");
-      // }
+      if (maybe_trace_end.has_value() && half_cycle == *maybe_trace_end * 2)
+      {
+         fprintf(stderr, "Close trace\n");
+         trace.close();
+      }
    }
 
    fprintf(stderr, "Simulated %ld cycles\n", half_cycle / 2);
