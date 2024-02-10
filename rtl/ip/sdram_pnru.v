@@ -42,11 +42,10 @@ module sdram_pnru (
   `endif
   localparam RFTIME  =   975 / 5; // 125 * 7.8us;
 
-  // cross clock domain
   reg [15:0] di;
   reg [23:0] ab;
   reg rd, wr, ack;
-  always @(posedge sys_clk) begin
+  always @ (*) begin
     di <= sys_di;
     ab <= sys_ab;
     rd <= sys_rd;
