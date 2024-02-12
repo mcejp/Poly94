@@ -8,6 +8,7 @@
 #include <verilated_vcd_c.h>
 
 #include <array>
+#include <chrono>
 #include <sstream>
 
 // As long as Verilator forces GNU++14...
@@ -30,6 +31,9 @@ tl::optional<long> stol_nullable(const char* str) {
 }
 
 int main(int argc, char** argv, char** env) {
+   using std::chrono::high_resolution_clock;
+   using std::chrono::duration;
+
    Verilated::commandArgs(argc, argv);
    Verilated::traceEverOn(true);
 
@@ -85,6 +89,8 @@ int main(int argc, char** argv, char** env) {
       printf("Loaded %d bytes from %s\n", f.gcount(), maybe_rom_filename);
    }
 
+   auto t1 = high_resolution_clock::now();
+
    for (half_cycle = 0; half_cycle < max_half_cycles && !Verilated::gotFinish(); half_cycle++) {
       // if (i > 10) {
       //    top.rootp->cpu.resetn = 1;
@@ -139,7 +145,10 @@ int main(int argc, char** argv, char** env) {
       }
    }
 
-   fprintf(stderr, "Simulated %ld cycles\n", half_cycle / 2);
+   auto t2 = high_resolution_clock::now();
+   duration<double> total_time = t2 - t1;
+
+   fprintf(stderr, "Simulated %ld cycles (%.2f Mcycles/sec)\n", half_cycle / 2, (half_cycle / 2) / total_time.count() * 1e-6);
 
    trace.close();
 
