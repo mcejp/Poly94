@@ -18,6 +18,7 @@ module Video_Ctrl(
   sdram_rdy,
   sdram_ack,
   sdram_addr_x16,
+  sdram_resp_valid,
   sdram_rdata,
 
   timing_i,
@@ -36,6 +37,7 @@ output reg        sdram_rd;           // not strobe -- keep up until ACK (TODO v
 input             sdram_rdy;
 output reg        sdram_ack;
 output reg[23:0]  sdram_addr_x16;     // sdram address in 16-bit words (16Mw => 32MB)
+input             sdram_resp_valid;
 input[15:0]       sdram_rdata;
 
 input VGA_Timing  timing_i;
@@ -147,6 +149,10 @@ always @ (posedge clk_i) begin
 
   timing_o <= timing_i;
   sdram_addr_x16[23:18] <= fb_page;
+
+  // test that SDRAM is always ack'd immediately, since we want to get rid of the handshake
+  // (resp_valid strobe is always 1 cycle)
+  assert(sdram_resp_valid == (!rst_i && !sdram_ack && sdram_rd && sdram_rdy && waitstate == 0));
 end
 
 endmodule

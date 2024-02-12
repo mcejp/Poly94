@@ -41,6 +41,7 @@ module top
     reg         sdram_wr;
     wire[23:0]  sdram_addr_x16;
     wire[15:0]  sdram_wdata;
+    wire        sdram_resp_valid;
     wire[15:0]  sdram_rdata;
     wire        sdram_ack;
     wire        sdram_rdy;
@@ -54,6 +55,7 @@ module top
     wire        cpu_sdram_wr;
     wire[23:0]  cpu_sdram_addr_x16;
     wire[15:0]  cpu_sdram_wdata;
+    wire        cpu_sdram_resp_valid;
     wire[15:0]  cpu_sdram_rdata;
     wire        cpu_sdram_ack;
     wire        cpu_sdram_rdy;
@@ -65,6 +67,7 @@ module top
     wire        video_sdram_rdy;
     wire        video_sdram_ack;
     wire[23:0]  video_sdram_addr_x16;
+    wire        video_sdram_resp_valid;
     wire[15:0]  video_sdram_rdata;
 
     wire[BOOTROM_ADDR_BITS-1:2]  bootrom_addr;
@@ -154,6 +157,7 @@ module top
       .sdram_rdy(video_sdram_rdy),
       .sdram_ack(video_sdram_ack),
       .sdram_addr_x16(video_sdram_addr_x16),
+      .sdram_resp_valid(video_sdram_resp_valid),
       .sdram_rdata(video_sdram_rdata),
 
       .timing_i(timing0),
@@ -258,6 +262,7 @@ module top
         .sys_rdy(sdram_rdy),
         .sys_wmask(sdram_wmask),
         .burst_i(sdram_burst),
+        .resp_valid_o(sdram_resp_valid),
 
         .sdr_ab(sdram_a),
         .sdr_d(sdr_d),
@@ -283,11 +288,13 @@ module top
       .sdram_rdy,
       .sdram_wmask,
       .sdram_burst,
+      .sdram_resp_valid,
 
       .cpu_sdram_rd,
       .cpu_sdram_wr,
       .cpu_sdram_addr_x16,
       .cpu_sdram_wdata,
+      .cpu_sdram_resp_valid,
       .cpu_sdram_rdata,
       .cpu_sdram_ack,
       .cpu_sdram_rdy,
@@ -297,6 +304,7 @@ module top
       .video_sdram_rdy,
       .video_sdram_ack,
       .video_sdram_addr_x16,
+      .video_sdram_resp_valid,
       .video_sdram_rdata
     );
 
@@ -373,6 +381,7 @@ module top
       .sdram_ack(cpu_sdram_ack),
       .sdram_addr_x16(cpu_sdram_addr_x16),
       .sdram_wdata(cpu_sdram_wdata),
+      .sdram_resp_valid(cpu_sdram_resp_valid),
       .sdram_rdata(cpu_sdram_rdata),
       .sdram_wmask(cpu_sdram_wmask),
 

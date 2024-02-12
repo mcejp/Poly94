@@ -48,6 +48,7 @@ module Memory_Ctrl(
   output reg        sdram_ack,
   output reg[23:0]  sdram_addr_x16,     // sdram address in 16-bit words (16Mw => 32MB)
   output reg[15:0]  sdram_wdata,
+  input             sdram_resp_valid,
   input[15:0]       sdram_rdata,
   output reg[1:0]   sdram_wmask,
 
@@ -389,6 +390,13 @@ always @ (posedge clk_i) begin
       $display("  ROM read => %08X", bootrom_data_i);
 `endif
     end
+
+    // test that SDRAM is always ack'd immediately, since we want to get rid of the handshake
+    // (resp_valid strobe is always 1 cycle)
+    if (sdram_resp_valid != (!rst_i && mem_state == STATE_SDRAM_WAIT && waitstate_counter == 2 && !(sdram_addr_x16[0] == 0 && sdram_ack == 1) && !mem_is_wr && sdram_rdy))
+        $display("Memory_Ctrl: sdram_resp_valid=%d but mem_state=%d wait=%d low_ack=%d is_wr=%d rdy=%d",
+                sdram_resp_valid, mem_state, waitstate_counter, (sdram_addr_x16[0] == 0 && sdram_ack == 1), mem_is_wr, sdram_rdy);
+    assert(sdram_resp_valid == (!rst_i && mem_state == STATE_SDRAM_WAIT && waitstate_counter == 2 && !(sdram_addr_x16[0] == 0 && sdram_ack == 1) && !mem_is_wr && sdram_rdy));
 end
 
 // indent: 4sp

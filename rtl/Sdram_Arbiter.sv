@@ -13,6 +13,7 @@ module Sdram_Arbiter(
   output reg        sdram_wr,
   output reg[23:0]  sdram_addr_x16,
   output reg[15:0]  sdram_wdata,
+  input             sdram_resp_valid,
   input[15:0]       sdram_rdata,
   output reg        sdram_ack,
   input             sdram_rdy,
@@ -23,6 +24,7 @@ module Sdram_Arbiter(
   input             cpu_sdram_wr,
   input[23:0]       cpu_sdram_addr_x16,
   input[15:0]       cpu_sdram_wdata,
+  output reg        cpu_sdram_resp_valid,
   output reg[15:0]  cpu_sdram_rdata,
   input             cpu_sdram_ack,
   output reg        cpu_sdram_rdy,
@@ -32,6 +34,7 @@ module Sdram_Arbiter(
   output reg        video_sdram_rdy,
   input             video_sdram_ack,
   input[23:0]       video_sdram_addr_x16,
+  output reg        video_sdram_resp_valid,
   output reg[15:0]  video_sdram_rdata
 );
 
@@ -42,7 +45,7 @@ localparam MUX_VIDEO = 2'd2;
 reg[1:0] mux;
 reg sdram_busy;
 
-reg[1:0] waitstate_counter;
+reg[1:0] waitstate_counter;   // Ignore sdram_rdy for 2 cycles after issuing request
 
 // reg mask_readiness;
 
@@ -109,7 +112,9 @@ always @ (*) begin
     sdram_burst = 1'b1;
 
     cpu_sdram_rdy = 1'b0;
+    cpu_sdram_resp_valid = '0;
     video_sdram_rdy = (waitstate_counter == 0) && sdram_rdy;
+    video_sdram_resp_valid = sdram_resp_valid;
   end else if (mux == MUX_CPU) begin
     sdram_rd = cpu_sdram_rd;
     sdram_wr = cpu_sdram_wr;
@@ -120,7 +125,9 @@ always @ (*) begin
     sdram_burst = 1'b0;
 
     cpu_sdram_rdy = (waitstate_counter == 0) && sdram_rdy;
+    cpu_sdram_resp_valid = sdram_resp_valid;
     video_sdram_rdy = 1'b0;
+    video_sdram_resp_valid = '0;
   end else begin
     sdram_rd = 0;
     sdram_wr = 0;
@@ -131,7 +138,9 @@ always @ (*) begin
     sdram_burst = 'x;
 
     cpu_sdram_rdy = 0;
+    cpu_sdram_resp_valid = '0;
     video_sdram_rdy = 1'b0;
+    video_sdram_resp_valid = '0;
   end
 
   cpu_sdram_rdata = sdram_rdata;
