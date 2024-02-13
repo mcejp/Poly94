@@ -3,12 +3,28 @@
 //
 // indent: 2sp
 
+/*
+Even if the SDRAM controller could accept multiple pipelined commands,
+we only accept one read command for processing at a time.
+
+It works like this:
+- CPU or video requests SDRAM access
+- we propagate the command (in the same clock cycle) and set the mux + busy state
+- we wait for command to be finished (sdram_ack, later sdram_resp_valid && sdram_resp_last ?)
+- then we become ready again (this could be maybe advanced by 1 cycle)
+
+Note:
+- the ready output is combinatorial
+*/
+
 // `define VERBOSE
 
 module Sdram_Arbiter(
   input         clk_i,
   input         rst_i,
 
+  input             sdram_cmd_valid,
+  output            sdram_cmd_ready,
   output reg        sdram_rd,
   output reg        sdram_wr,
   output reg[23:0]  sdram_addr_x16,
@@ -20,6 +36,8 @@ module Sdram_Arbiter(
   output reg[1:0]   sdram_wmask,
   output reg        sdram_burst,
 
+  input             cpu_sdram_cmd_valid,
+  output            cpu_sdram_cmd_ready,
   input             cpu_sdram_rd,
   input             cpu_sdram_wr,
   input[23:0]       cpu_sdram_addr_x16,
@@ -30,6 +48,8 @@ module Sdram_Arbiter(
   output reg        cpu_sdram_rdy,
   input[1:0]        cpu_sdram_wmask,
 
+  input             video_sdram_cmd_valid,
+  output            video_sdram_cmd_ready,
   input             video_sdram_rd,
   output reg        video_sdram_rdy,
   input             video_sdram_ack,

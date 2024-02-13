@@ -42,6 +42,8 @@ module Memory_Ctrl(
   input  wire[31:0] csr_dat_i,
 
   // SDRAM
+  output            sdram_cmd_valid,
+  input             sdram_cmd_ready,
   output reg        sdram_rd,           // not strobe -- keep up until ACK (TODO verify)
   output reg        sdram_wr,
   input             sdram_rdy,
@@ -467,5 +469,7 @@ assign bootrom_addr_o[$left(bootrom_addr_o):2] = mem_addr[$left(bootrom_addr_o):
 
 assign cpu_dBus_rsp_payload_data = cpu_rdata;
 assign cpu_iBus_rsp_payload_data = cpu_rdata;
+
+assign sdram_cmd_valid = '0;
 
 endmodule

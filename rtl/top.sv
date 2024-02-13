@@ -37,6 +37,8 @@ module top
     assign sdram_cke = 1'b1;
 
     // Memory control-related
+    wire        sdram_cmd_valid;
+    wire        sdram_cmd_ready;
     reg         sdram_rd;
     reg         sdram_wr;
     wire[23:0]  sdram_addr_x16;
@@ -51,6 +53,8 @@ module top
     wire[15:0]  sdr_d           /* verilator public */;
     wire        sdr_dq_oe       /* verilator public */;
 
+    wire        cpu_sdram_cmd_valid;
+    wire        cpu_sdram_cmd_ready;
     wire        cpu_sdram_rd;
     wire        cpu_sdram_wr;
     wire[23:0]  cpu_sdram_addr_x16;
@@ -63,6 +67,8 @@ module top
 
     reg         video_fb_en;
 
+    wire        video_sdram_cmd_valid;
+    wire        video_sdram_cmd_ready;
     wire        video_sdram_rd;
     wire        video_sdram_rdy;
     wire        video_sdram_ack;
@@ -153,6 +159,8 @@ module top
       .fb_en_i(video_fb_en),
 
       // SDRAM
+      .sdram_cmd_valid(video_sdram_cmd_valid),
+      .sdram_cmd_ready(video_sdram_cmd_ready),
       .sdram_rd(video_sdram_rd),
       .sdram_rdy(video_sdram_rdy),
       .sdram_ack(video_sdram_ack),
@@ -253,6 +261,8 @@ module top
 
     sdram_pnru sdram_pnru_inst(
         .sys_clk(clk_sys),
+        .cmd_valid_i(sdram_cmd_valid),
+        .cmd_ready_o(sdram_cmd_ready),
         .sys_rd(sdram_rd),
         .sys_wr(sdram_wr),
         .sys_ab(sdram_addr_x16),
@@ -279,6 +289,8 @@ module top
       .clk_i(clk_sys),
       .rst_i(~reset_n),
 
+      .sdram_cmd_valid,
+      .sdram_cmd_ready,
       .sdram_rd,
       .sdram_wr,
       .sdram_addr_x16,
@@ -290,6 +302,8 @@ module top
       .sdram_burst,
       .sdram_resp_valid,
 
+      .cpu_sdram_cmd_valid,
+      .cpu_sdram_cmd_ready,
       .cpu_sdram_rd,
       .cpu_sdram_wr,
       .cpu_sdram_addr_x16,
@@ -300,6 +314,8 @@ module top
       .cpu_sdram_rdy,
       .cpu_sdram_wmask,
 
+      .video_sdram_cmd_valid,
+      .video_sdram_cmd_ready,
       .video_sdram_rd,
       .video_sdram_rdy,
       .video_sdram_ack,
@@ -376,6 +392,8 @@ module top
       .csr_dat_i(csr_dat_o),
 
       .sdram_rd(cpu_sdram_rd),
+      .sdram_cmd_valid(cpu_sdram_cmd_valid),
+      .sdram_cmd_ready(cpu_sdram_cmd_ready),
       .sdram_wr(cpu_sdram_wr),
       .sdram_rdy(cpu_sdram_rdy),
       .sdram_ack(cpu_sdram_ack),

@@ -14,6 +14,8 @@ module Video_Ctrl(
 
   fb_en_i,
 
+  sdram_cmd_valid,
+  sdram_cmd_ready,
   sdram_rd,
   sdram_rdy,
   sdram_ack,
@@ -33,6 +35,8 @@ input             rst_i;
 input             fb_en_i;
 
 // SDRAM
+output            sdram_cmd_valid;
+input             sdram_cmd_ready;
 output reg        sdram_rd;           // not strobe -- keep up until ACK (TODO verify)
 input             sdram_rdy;
 output reg        sdram_ack;
@@ -154,6 +158,8 @@ always @ (posedge clk_i) begin
   // (resp_valid strobe is always 1 cycle)
   assert(sdram_resp_valid == (!rst_i && !sdram_ack && sdram_rd && sdram_rdy && waitstate == 0));
 end
+
+assign sdram_cmd_valid = '0;
 
 endmodule
 

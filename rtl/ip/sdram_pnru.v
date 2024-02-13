@@ -10,6 +10,8 @@
 module sdram_pnru (
     // system interface
     input  wire        sys_clk,             // CLK 25 Mhz
+    input              cmd_valid_i,         // command valid strobe
+    output reg         cmd_ready_o,         // command acceptance strobe
     input  wire        sys_rd,              // read word
     input  wire        sys_wr,              // write word
     output reg         sys_rdy = 1'b0,      // mem ready
@@ -191,6 +193,10 @@ module sdram_pnru (
               end
               
     endcase
+  end
+
+  always @ (*) begin
+    cmd_ready_o = (state == IDLE) && !init && (ctr < RFTIME);
   end
 
 endmodule
