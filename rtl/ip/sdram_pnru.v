@@ -61,7 +61,7 @@ module sdram_pnru (
   assign sdr_n_CS_WE_RAS_CAS = sdr_cmd;
   assign sdr_ba = (state==CONFIG) ? 2'b00 : ab[10:9];
   assign sdr_d = di;
-  assign sdr_dq_oe = (state==RWRDY && wr);
+  assign sdr_dq_oe = (state==RWRDY && is_write);
 
   // controller states & FSM
   localparam IDLE = 0, RFRSH1 = 1, RFRSH2 = 2, CONFIG = 3, RDWR = 4, RWRDY = 5, ACKWT = 6, WAIT = 7;
@@ -76,6 +76,8 @@ module sdram_pnru (
   reg bursting;
   reg  [7:0] burst_count;
   
+  reg is_write;
+
   // convenience signals
   reg         init = 1'b1;
   wire  [8:0] col  = ab[8:0];
@@ -105,10 +107,12 @@ module sdram_pnru (
               else begin
                 sys_rdy <= 1'b0;
                 if (ctr>=RFTIME) state <= RFRSH1;         // as needed, refresh a row
-                else if (rd|wr) begin
+                else if (cmd_valid_i|rd|wr) begin
                   state <= RDWR;           // else respond to rd or wr request
-                  sdr_dqm <= rd ? 2'b00 : ~sys_wmask;
+                  sdr_dqm <= !wr ? 2'b00 : ~sys_wmask;
                   bursting <= burst_i;
+                  // this can be set to X in other cases
+                  is_write <= wr;
                 end else begin
                   sys_rdy <= 1'b1;
                   state <= IDLE;                                 // else do nothing
@@ -151,18 +155,18 @@ module sdram_pnru (
                   dly <= tRP-2; next <= RDWR;
                   end
                 else begin // all good, issue R/W command
-                  sdr_cmd <= (rd) ? READ : WRITE;
+                  sdr_cmd <= is_write ? WRITE : READ;
                   sdr_ab  <= {4'b0000, col};
                   dly <= CL-1; next <= RWRDY;
-                  if (wr) state <= RWRDY; // no delay needed for writes
+                  if (is_write) state <= RWRDY; // no delay needed for writes
                   end
               end
       
       RWRDY:  begin // latch read result, or write data
                 sys_rdy <= 1'b1;
-                if (rd) sys_do  <= sdr_q;
-                if (rd) resp_valid_o <= '1;
-                if (wr) sdr_cmd <= BURST_STOP;
+                if (!is_write) sys_do  <= sdr_q;
+                if (!is_write) resp_valid_o <= '1;
+                if (is_write) sdr_cmd <= BURST_STOP;
                 if (bursting) begin
                   // $display("SDRAM burst cnt %d, put out data, stop=%d", burst_count, (burst_count == 64 - CL));
                   if (burst_count == 64 - CL) begin    // might be off by 1 or 2
