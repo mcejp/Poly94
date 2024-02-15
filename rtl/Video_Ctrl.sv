@@ -35,7 +35,7 @@ input             rst_i;
 input             fb_en_i;
 
 // SDRAM
-output            sdram_cmd_valid;
+output reg        sdram_cmd_valid;
 input             sdram_cmd_ready;
 output reg        sdram_rd;           // not strobe -- keep up until ACK (TODO verify)
 input             sdram_rdy;
@@ -61,9 +61,6 @@ reg[9:0] line_write_ptr;
 
 reg[9:0] line_no;
 
-reg[1:0] waitstate;                   // TODO: this needs to be validated for correctness
-                                      // (or better yet, replaced by better readiness signalling)
-
 localparam DISPLAY_W = 320;
 localparam DISPLAY_H = 240;
 
@@ -73,11 +70,11 @@ localparam BURST_BITS = 6;
 always @ (posedge clk_i) begin
   sdram_ack <= 1'b0;
 
-  if (waitstate > 0)
-    waitstate <= waitstate - 1;
+  if (sdram_cmd_valid && sdram_cmd_ready) begin
+    sdram_cmd_valid <= '0;
+  end
 
   if (rst_i) begin
-    sdram_rd <= 1'b0;
     sdram_addr_x16 <= 0;
     rgb_o <= 24'h000000;
 
@@ -111,8 +108,7 @@ always @ (posedge clk_i) begin
 
       if (fb_en_i && line_no < DISPLAY_H) begin
         // if framebuffer enabled, begin sdram read
-        sdram_rd <= 1'b1;
-        waitstate <= 3;
+        sdram_cmd_valid <= '1;
       end
     end else if (timing_i.valid && timing_i.blank_n == '1) begin
       // visible pixel
@@ -124,19 +120,18 @@ always @ (posedge clk_i) begin
 
       // sdram cycle finished, decide if we need to do another one
       if (line_write_ptr < DISPLAY_W) begin
-        sdram_rd <= 1'b1;
-        waitstate <= 3;
+        sdram_cmd_valid <= '1;
       end
-    end else if (sdram_rd && sdram_rdy && waitstate == 0) begin
+    end else if (sdram_resp_valid) begin
 `ifdef VERBOSE
       $display("VIDEO_CTRL: got data word [%03d:%03d] => %04Xh", line_no, line_write_ptr, sdram_rdata);
 `endif
+      // TODO: should have sdram_resp_last instead of having to count
       if (line_write_ptr[BURST_BITS-1:0] == BURST_LEN - 1) begin
 `ifdef VERBOSE
         $display("video ctrl: ACK burst @ %d", line_write_ptr);
 `endif
         sdram_ack <= 1'b1;
-        sdram_rd <= 1'b0;
         sdram_addr_x16[17:0] <= sdram_addr_x16[17:0] + BURST_LEN;
       end
 
@@ -153,13 +148,9 @@ always @ (posedge clk_i) begin
 
   timing_o <= timing_i;
   sdram_addr_x16[23:18] <= fb_page;
-
-  // test that SDRAM is always ack'd immediately, since we want to get rid of the handshake
-  // (resp_valid strobe is always 1 cycle)
-  assert(sdram_resp_valid == (!rst_i && !sdram_ack && sdram_rd && sdram_rdy && waitstate == 0));
 end
 
-assign sdram_cmd_valid = '0;
+assign sdram_rd = '0;
 
 endmodule
 
