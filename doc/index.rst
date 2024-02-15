@@ -10,3 +10,4 @@ Poly94 Game System
    critical-paths
    roadmap
    sdram-controller
+   video-controller
