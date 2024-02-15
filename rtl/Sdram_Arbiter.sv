@@ -23,8 +23,8 @@ module Sdram_Arbiter(
   input         clk_i,
   input         rst_i,
 
-  input             sdram_cmd_valid,
-  output            sdram_cmd_ready,
+  output reg        sdram_cmd_valid,
+  input             sdram_cmd_ready,
   output reg        sdram_rd,
   output reg        sdram_wr,
   output reg[23:0]  sdram_addr_x16,
@@ -37,7 +37,7 @@ module Sdram_Arbiter(
   output reg        sdram_burst,
 
   input             cpu_sdram_cmd_valid,
-  output            cpu_sdram_cmd_ready,
+  output reg        cpu_sdram_cmd_ready,
   input             cpu_sdram_rd,
   input             cpu_sdram_wr,
   input[23:0]       cpu_sdram_addr_x16,
@@ -49,7 +49,7 @@ module Sdram_Arbiter(
   input[1:0]        cpu_sdram_wmask,
 
   input             video_sdram_cmd_valid,
-  output            video_sdram_cmd_ready,
+  output reg        video_sdram_cmd_ready,
   input             video_sdram_rd,
   output reg        video_sdram_rdy,
   input             video_sdram_ack,
@@ -69,6 +69,13 @@ reg[1:0] waitstate_counter;   // Ignore sdram_rdy for 2 cycles after issuing req
 
 // reg mask_readiness;
 
+always_comb begin
+  video_sdram_cmd_ready = (!rst_i && !sdram_busy && sdram_cmd_ready);
+  cpu_sdram_cmd_ready = (video_sdram_cmd_ready && !video_sdram_cmd_valid);
+
+  sdram_cmd_valid = cpu_sdram_cmd_valid || video_sdram_cmd_valid;
+end
+
 always @ (posedge clk_i) begin
   // mask_readiness <= 0;
 
@@ -80,7 +87,16 @@ always @ (posedge clk_i) begin
     mux <= MUX_NONE;
   end else begin
     if (!sdram_busy) begin
-      if (video_sdram_rd) begin
+      if (sdram_cmd_ready && video_sdram_cmd_valid) begin
+        // Pipelined video command is being accepted
+`ifdef VERBOSE
+        $display("Sdram_Arb: begin PIPELINED video read @ %08Xh", {video_sdram_addr_x16, 1'b0});
+`endif
+        mux <= MUX_VIDEO;
+        sdram_busy <= 1'b1;
+        // mask_readiness <= 1'b1;
+        waitstate_counter <= 2;
+      end else if (video_sdram_rd) begin
 `ifdef VERBOSE
         $display("Sdram_Arb: begin video read @ %08Xh", {video_sdram_addr_x16, 1'b0});
 `endif
@@ -122,7 +138,7 @@ always @ (posedge clk_i) begin
 end
 
 always @ (*) begin
-  if (mux == MUX_VIDEO) begin
+  if (mux == MUX_VIDEO || (mux == MUX_NONE && video_sdram_cmd_ready && video_sdram_cmd_valid)) begin
     sdram_rd = video_sdram_rd;
     sdram_wr = 1'b0;
     sdram_addr_x16 = video_sdram_addr_x16;
