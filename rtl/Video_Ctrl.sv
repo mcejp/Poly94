@@ -91,9 +91,8 @@ always @ (posedge clk_i) begin
 `endif
     end
 
-    if (timing_i.end_of_visible_line && timing_i.vsync_n == 1'b1) begin   // FIXME: should start loading if *next* line is not blanked
+    if (timing_i.end_of_line && timing_i.next_line_visible) begin
       line_write_ptr <= 10'd0;
-      line_no <= line_no + 1;
 
       if (fb_en_i && line_no < DISPLAY_H) begin
         // if framebuffer enabled, begin sdram read
@@ -124,6 +123,10 @@ always @ (posedge clk_i) begin
       line_buffer[line_write_ptr] <= sdram_rdata;
       line_write_ptr <= line_write_ptr + 1'b1;
       // sdram_addr_x16 <= sdram_addr_x16 + 1'b1;
+    end
+
+    if (timing_i.end_of_visible_line) begin
+      line_no <= line_no + 1;
     end
 
     if (timing_i.end_of_frame) begin
