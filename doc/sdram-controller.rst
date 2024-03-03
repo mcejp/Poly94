@@ -108,3 +108,11 @@ SDRAM simulation model
 - We use mt48lc16m16a2.v from Micron
 - Some comments + alternatives mentioned on `/r/FPGA <https://old.reddit.com/r/FPGA/comments/a5e3ok/recommend_an_sdram_model_for_verilator/>`_
 - Verilator compatibility is TODO (would certainly be nice, but if not feasible, can get away with a very simple, permissive model)
+
+
+SDRAM clock shift calculation
+=============================
+
+See tools/sdram_clk_phase.py.
+
+Open question: How to get I/O timing figures from nextpnr?

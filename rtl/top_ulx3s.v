@@ -41,7 +41,7 @@ ecp5pll
 #(
     .in_hz(  25_000_000),
     .out0_hz(CLK_SYS_HZ),
-    .out1_hz(CLK_SYS_HZ), .out1_deg(90) // phase shifted for SDRAM chip
+    .out1_hz(CLK_SYS_HZ), .out1_deg(330) // phase shifted for SDRAM chip
 )
 ecp5pll_inst
 (
