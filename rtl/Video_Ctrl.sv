@@ -20,7 +20,6 @@ module Video_Ctrl(
 
   sdram_cmd_valid,
   sdram_cmd_ready,
-  sdram_rd,
   sdram_rdy,
   sdram_ack,
   sdram_addr_x16,
@@ -41,7 +40,6 @@ input             fb_en_i;
 // SDRAM
 output reg        sdram_cmd_valid;
 input             sdram_cmd_ready;
-output reg        sdram_rd;           // not strobe -- keep up until ACK (TODO verify)
 input             sdram_rdy;
 output reg        sdram_ack;
 output reg[23:0]  sdram_addr_x16;     // sdram address in 16-bit words (16Mw => 32MB)
@@ -182,8 +180,6 @@ always_ff @ (posedge clk_i) begin
 
   timing_o <= timing_i;
 end
-
-assign sdram_rd = '0;
 
 endmodule
 

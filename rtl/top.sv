@@ -69,7 +69,6 @@ module top
 
     wire        video_sdram_cmd_valid;
     wire        video_sdram_cmd_ready;
-    wire        video_sdram_rd;
     wire        video_sdram_rdy;
     wire        video_sdram_ack;
     wire[23:0]  video_sdram_addr_x16;
@@ -161,7 +160,6 @@ module top
       // SDRAM
       .sdram_cmd_valid(video_sdram_cmd_valid),
       .sdram_cmd_ready(video_sdram_cmd_ready),
-      .sdram_rd(video_sdram_rd),
       .sdram_rdy(video_sdram_rdy),
       .sdram_ack(video_sdram_ack),
       .sdram_addr_x16(video_sdram_addr_x16),
@@ -316,7 +314,6 @@ module top
 
       .video_sdram_cmd_valid,
       .video_sdram_cmd_ready,
-      .video_sdram_rd,
       .video_sdram_rdy,
       .video_sdram_ack,
       .video_sdram_addr_x16,

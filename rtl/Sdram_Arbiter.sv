@@ -50,7 +50,6 @@ module Sdram_Arbiter(
 
   input             video_sdram_cmd_valid,
   output reg        video_sdram_cmd_ready,
-  input             video_sdram_rd,
   output reg        video_sdram_rdy,
   input             video_sdram_ack,
   input[23:0]       video_sdram_addr_x16,
@@ -96,14 +95,6 @@ always @ (posedge clk_i) begin
         sdram_busy <= 1'b1;
         // mask_readiness <= 1'b1;
         waitstate_counter <= 2;
-      end else if (video_sdram_rd) begin
-`ifdef VERBOSE
-        $display("Sdram_Arb: begin video read @ %08Xh", {video_sdram_addr_x16, 1'b0});
-`endif
-        mux <= MUX_VIDEO;
-        sdram_busy <= 1'b1;
-        // mask_readiness <= 1'b1;
-        waitstate_counter <= 2;
       end else if (cpu_sdram_rd || cpu_sdram_wr) begin
 `ifdef VERBOSE
         $display("Sdram_Arb: begin CPU wr=%d addr=%08Xh", cpu_sdram_wr, {cpu_sdram_addr_x16, 1'b0});
@@ -139,7 +130,7 @@ end
 
 always @ (*) begin
   if (mux == MUX_VIDEO || (mux == MUX_NONE && video_sdram_cmd_ready && video_sdram_cmd_valid)) begin
-    sdram_rd = video_sdram_rd;
+    sdram_rd = '0;
     sdram_wr = 1'b0;
     sdram_addr_x16 = video_sdram_addr_x16;
     sdram_wdata = 16'hxxxx;
