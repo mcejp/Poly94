@@ -36,4 +36,4 @@ Simulation environments
 =======================
 
 - Verilator (~1.58 Mcycles/sec on i7-8565U @ 1.80 GHz)
-- cocotb
+- cocotb (~833 cycles/sec)
