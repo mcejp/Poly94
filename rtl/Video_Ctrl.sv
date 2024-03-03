@@ -76,25 +76,11 @@ always @ (posedge clk_i) begin
 
   if (rst_i) begin
     sdram_addr_x16 <= 0;
-    rgb_o <= 24'h000000;
 
     line_read_ptr <= 10'd0;
     line_write_ptr <= 10'd0;
     line_no <= '0;
   end else begin
-    if (fb_en_i) begin
-      if (line_no < DISPLAY_H) begin
-        rgb_o <= {line_read_data[15:11], line_read_data[15:13], // r
-                  line_read_data[10:5], line_read_data[10:9],   // g
-                  line_read_data[4:0], line_read_data[2:0]};    // b
-      end else begin
-        // TODO: use configured background color, etc.
-        rgb_o <= 24'h000000;
-      end
-    end else begin
-      rgb_o <= 24'hFF00FF;
-    end
-
     if (timing_i.end_of_line) begin
 `ifdef VERBOSE
       $display("Video: EOL; en=%d vsync_n=%d", fb_en_i, timing_i.vsync_n);
@@ -148,6 +134,27 @@ always @ (posedge clk_i) begin
 
   timing_o <= timing_i;
   sdram_addr_x16[23:18] <= fb_page;
+end
+
+// RGB Output Generation
+
+always_ff @ (posedge clk_i) begin
+  if (rst_i) begin
+    rgb_o <= 24'h000000;
+  end else begin
+    if (fb_en_i) begin
+      if (line_no < DISPLAY_H) begin
+        rgb_o <= {line_read_data[15:11], line_read_data[15:13], // r
+                  line_read_data[10:5], line_read_data[10:9],   // g
+                  line_read_data[4:0], line_read_data[2:0]};    // b
+      end else begin
+        // TODO: use configured background color, etc.
+        rgb_o <= 24'h000000;
+      end
+    end else begin
+      rgb_o <= 24'hFF00FF;
+    end
+  end
 end
 
 assign sdram_rd = '0;
