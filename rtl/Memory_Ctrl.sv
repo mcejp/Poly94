@@ -42,7 +42,7 @@ module Memory_Ctrl(
   input  wire[31:0] csr_dat_i,
 
   // SDRAM
-  output            sdram_cmd_valid,
+  output reg        sdram_cmd_valid,
   input             sdram_cmd_ready,
   output reg        sdram_rd,           // not strobe -- keep up until ACK (TODO verify)
   output reg        sdram_wr,
@@ -65,7 +65,7 @@ localparam[2:0] CMD_SIZE_16BIT = 3'd1;
 localparam[2:0] CMD_SIZE_32BIT = 3'd2;
 
 // keep number of top-level states to a minimum so that high-fanout expressions like 'io_write_valid_o' are simple
-enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_WAIT_BOOTROM, STATE_BURST_READ_BOOTROM, STATE_SDRAM_ACK, STATE_CSR } mem_state;
+enum { STATE_IDLE, STATE_FINISHED, STATE_SDRAM_WAIT, STATE_WAIT_BOOTROM, STATE_BURST_READ_BOOTROM, STATE_SDRAM_ACK, STATE_CSR, STATE_SDRAM_READ } mem_state;
 
 wire dBus_is_csr_addr =     addr_is_csr(cpu_dBus_cmd_payload_address[26:0]);
 wire dBus_is_sdram_addr =   addr_is_sdram(cpu_dBus_cmd_payload_address[26:0]);
@@ -102,6 +102,7 @@ always @ (posedge clk_i) begin
 
     if (rst_i) begin
         mem_state <= STATE_IDLE;
+        sdram_cmd_valid <= '0;
         sdram_rd <= 0;
         sdram_wr <= 0;
         waitstate_counter <= 0;
@@ -197,9 +198,9 @@ always @ (posedge clk_i) begin
 
                     // low halfword first
                     sdram_addr_x16 <= {cpu_dBus_cmd_payload_address[$left(sdram_addr_x16) + 1:2], 1'b0};
-                    sdram_rd <= 1;
+                    sdram_cmd_valid <= '1;
 
-                    mem_state <= STATE_SDRAM_WAIT;
+                    mem_state <= STATE_SDRAM_READ;
                 end else begin
                     // ROM read (or a futile attempt to write)
                     // ROM read finishes simultaneously and so will the setting of the RDATA mux
@@ -231,9 +232,9 @@ always @ (posedge clk_i) begin
 
                     // low halfword first
                     sdram_addr_x16 <= {cpu_iBus_cmd_payload_address[$left(sdram_addr_x16) + 1:2], 1'b0};
-                    sdram_rd <= 1;
+                    sdram_cmd_valid <= 1;
 
-                    mem_state <= STATE_SDRAM_WAIT;
+                    mem_state <= STATE_SDRAM_READ;
                 end else begin
 `ifdef VERBOSE_MEMCTL
                     $display("begin 32-bit burst ROM read via I-bus [%08Xh]", cpu_iBus_cmd_payload_address);
@@ -248,20 +249,60 @@ always @ (posedge clk_i) begin
             end
         end
 
+        STATE_SDRAM_READ: begin
+            if (sdram_cmd_ready) begin
+                sdram_cmd_valid <= '0;
+            end
+
+            if (sdram_resp_valid) begin
+                if (sdram_addr_x16[0] == '0) begin
+                    // Acknowledge low halfword
+                    sdram_ack <= '1;
+                end else begin
+                    // addr=1 -> 32-bit read finished
+                    sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
+                    sdram_wr <= 0;
+
+                    if (mem_purpose == PURPOSE_I) begin
+                        cpu_iBus_rsp_valid <= 1'b1;
+                    end else begin
+                        cpu_dBus_rsp_valid <= 1;
+                    end
+
+                    if (words_remaining == 0) begin
+                        mem_state <= STATE_FINISHED;
+                    end else begin
+                        mem_state <= STATE_SDRAM_ACK;
+
+                        sdram_ack <= 1;   // not async safe etc.
+                    end
+
+                    mem_addr <= mem_addr + 4;
+                    words_remaining <= words_remaining - 1;
+                end
+
+            end else if (sdram_addr_x16[0] == 0 && sdram_ack == 1) begin
+                // in process of acknowledging 1st half of 32-bit read
+
+                sdram_cmd_valid <= '1;
+                sdram_ack <= '0;
+
+                // high halfword now
+                sdram_addr_x16 <= {mem_addr[$left(sdram_addr_x16) + 1:2], 1'b1};
+            end
+        end
+
         STATE_SDRAM_WAIT: begin
+            assert(mem_is_wr);
+
             // 1 cycle to propagate request to SDRAM
             // 1 cycle to see de-asserted SDRAM rdy
             if (waitstate_counter < 2) begin
                 waitstate_counter <= waitstate_counter + 1;
             end else if (sdram_addr_x16[0] == 0 && sdram_ack == 1) begin
-                // in process of acknowledging 1st half of 32-bit read/write
+                // in process of acknowledging 1st half of 32-bit write
 
-                if (mem_is_wr) begin
-                    sdram_wr <= 1;
-                end else begin
-                    sdram_rd <= 1;
-                end
-
+                sdram_wr <= 1;
                 sdram_ack <= 0;
 
                 // high halfword now
@@ -272,8 +313,7 @@ always @ (posedge clk_i) begin
             end else if (sdram_rdy) begin
                 // NB: None of this is async-safe
 
-                if (mem_is_wr) begin
-                  if (mem_size == CMD_SIZE_32BIT) begin
+                if (mem_size == CMD_SIZE_32BIT) begin
                     // 32-bit write
 
                     if (sdram_addr_x16[0] == 0 && sdram_ack == 0) begin
@@ -287,51 +327,13 @@ always @ (posedge clk_i) begin
                         sdram_wr <= 0;
                         mem_state <= STATE_FINISHED;
                     end
-                  end else begin
+                end else begin
                     // 16-bit write
 
                     sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
                     sdram_wr <= 0;
                     mem_state <= STATE_FINISHED;
 
-                  end
-                end else begin
-                    // 32-bit read
-
-                    if (sdram_addr_x16[0] == 0 && sdram_ack == 0) begin
-                        // Acknowledge low halfword
-
-                        // cpu_sdram_rdata[15:0] <= sdram_rdata;
-                        sdram_rd <= 0;
-                        sdram_ack <= 1;
-
-                        mem_state <= STATE_SDRAM_WAIT;
-                    end else if (sdram_addr_x16[0] == 1) begin
-                        // cpu_sdram_rdata[31:16] <= sdram_rdata;
-
-                        // addr=1, sdram ready, wait done -> 32-bit read finished
-                        sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
-                        sdram_wr <= 0;
-
-                        if (mem_purpose == PURPOSE_I) begin
-                            cpu_iBus_rsp_valid <= 1'b1;
-                        end else begin
-                            cpu_dBus_rsp_valid <= 1;
-                        end
-
-                        if (words_remaining == 0) begin
-                            mem_state <= STATE_FINISHED;
-                        end else begin
-                            mem_state <= STATE_SDRAM_ACK;
-
-                            sdram_ack <= 1;   // not async safe etc.
-                        end
-
-                        waitstate_counter <= 0;
-
-                        mem_addr <= mem_addr + 4;
-                        words_remaining <= words_remaining - 1;
-                    end
                 end
             end
 
@@ -340,8 +342,8 @@ always @ (posedge clk_i) begin
         STATE_SDRAM_ACK: begin
           // low halfword first
           sdram_addr_x16 <= {mem_addr[$left(sdram_addr_x16) + 1:2], 1'b0};
-          sdram_rd <= 1;
-          mem_state <= STATE_SDRAM_WAIT;
+          sdram_cmd_valid <= 1;
+          mem_state <= STATE_SDRAM_READ;
           sdram_ack <= 0;
         end
 
@@ -392,13 +394,6 @@ always @ (posedge clk_i) begin
       $display("  ROM read => %08X", bootrom_data_i);
 `endif
     end
-
-    // test that SDRAM is always ack'd immediately, since we want to get rid of the handshake
-    // (resp_valid strobe is always 1 cycle)
-    if (sdram_resp_valid != (!rst_i && mem_state == STATE_SDRAM_WAIT && waitstate_counter == 2 && !(sdram_addr_x16[0] == 0 && sdram_ack == 1) && !mem_is_wr && sdram_rdy))
-        $display("Memory_Ctrl: sdram_resp_valid=%d but mem_state=%d wait=%d low_ack=%d is_wr=%d rdy=%d",
-                sdram_resp_valid, mem_state, waitstate_counter, (sdram_addr_x16[0] == 0 && sdram_ack == 1), mem_is_wr, sdram_rdy);
-    assert(sdram_resp_valid == (!rst_i && mem_state == STATE_SDRAM_WAIT && waitstate_counter == 2 && !(sdram_addr_x16[0] == 0 && sdram_ack == 1) && !mem_is_wr && sdram_rdy));
 end
 
 // indent: 4sp
@@ -448,12 +443,11 @@ always_ff @ (posedge clk_i, posedge rst_i) begin
             cpu_rdata <= bootrom_data_i;
         end
 
-        if (mem_state == STATE_SDRAM_WAIT) begin
-            // This hellish expression could surely be simplified
-            if (waitstate_counter >= 2 && !(sdram_addr_x16[0] == 0 && sdram_ack == 1) && sdram_rdy && !mem_is_wr) begin
-                if (sdram_addr_x16[0] == 0 && sdram_ack == 0) begin
+        if (mem_state == STATE_SDRAM_READ) begin
+            if (sdram_resp_valid) begin
+                if (sdram_addr_x16[0] == 0)
                     sdram_rdata_low <= sdram_rdata;
-                end else if (sdram_addr_x16[0] == 1) begin
+                else begin
 `ifdef VERBOSE_MEMCTL
                     $display("  finished 32-bit SDRAM read [%08X] => %08X", mem_addr, {sdram_rdata, sdram_rdata_low});
 `endif
@@ -469,7 +463,5 @@ assign bootrom_addr_o[$left(bootrom_addr_o):2] = mem_addr[$left(bootrom_addr_o):
 
 assign cpu_dBus_rsp_payload_data = cpu_rdata;
 assign cpu_iBus_rsp_payload_data = cpu_rdata;
-
-assign sdram_cmd_valid = '0;
 
 endmodule
