@@ -97,6 +97,15 @@ always @ (posedge clk_i) begin
         sdram_busy <= 1'b1;
         // mask_readiness <= 1'b1;
         waitstate_counter <= 2;
+      end else if (sdram_cmd_ready && cpu_sdram_cmd_valid) begin
+        // Pipelined CPU command is being accepted
+`ifdef VERBOSE
+        $display("Sdram_Arb: begin CPU wr=%d addr=%08Xh", cpu_sdram_wr, {cpu_sdram_addr_x16, 1'b0});
+`endif
+        mux <= MUX_CPU;
+        sdram_busy <= 1'b1;
+        // mask_readiness <= 1'b1;
+        waitstate_counter <= 2;
       end else if (cpu_sdram_rd || cpu_sdram_wr) begin
 `ifdef VERBOSE
         $display("Sdram_Arb: begin CPU wr=%d addr=%08Xh", cpu_sdram_wr, {cpu_sdram_addr_x16, 1'b0});
@@ -144,7 +153,7 @@ always @ (*) begin
     cpu_sdram_resp_valid = '0;
     video_sdram_rdy = (waitstate_counter == 0) && sdram_rdy;
     video_sdram_resp_valid = sdram_resp_valid;
-  end else if (mux == MUX_CPU) begin
+  end else if (mux == MUX_CPU || (mux == MUX_NONE && cpu_sdram_cmd_ready && cpu_sdram_cmd_valid)) begin
     sdram_rd = cpu_sdram_rd;
     sdram_wr = cpu_sdram_wr;
     sdram_addr_x16 = cpu_sdram_addr_x16;
