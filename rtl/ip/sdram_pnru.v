@@ -39,11 +39,11 @@ module sdram_pnru (
   // SDRAM timing parameters
   localparam tRP = 3, tMRD = 2, tRCD = 3, tRC = 9, CL = 2;
   `ifdef SYNTHESIS
-  localparam INITLEN = 12500 / 5; // 125 * 100us;
+  localparam INITLEN = 5000;  // ceil(50MHz * 100us)
   `else
   localparam INITLEN = 3;
   `endif
-  localparam RFTIME  =   975 / 5; // 125 * 7.8us;
+  localparam RFTIME = 390;    // floor(50 MHz * 7.8125us)
 
   reg [15:0] di;
   reg [23:0] ab;
