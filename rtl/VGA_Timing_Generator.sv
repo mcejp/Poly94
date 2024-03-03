@@ -145,11 +145,21 @@ always @ (posedge clk_i) begin
             timing_o.blank_n <= 1'b0;
         end
     end
+
+    // scanline + 1'b1 is not the same as next_scanline!
+    // TODO: this does some redundant computation
+    timing_o.next_line_visible <= (scanline + 1'b1 < V_VISIBLE || scanline == V_TOTAL-1);
 end
 
 // Generate End-of-Line output
 
 always @ (posedge clk_i) begin
+    if (clk_en && next_i == H_VISIBLE) begin
+        timing_o.end_of_line <= 1'b1;
+    end else begin
+        timing_o.end_of_line <= 1'b0;
+    end
+
     if (clk_en && is_picture_line && next_i == H_VISIBLE) begin
         timing_o.end_of_visible_line <= 1'b1;
     end else begin
