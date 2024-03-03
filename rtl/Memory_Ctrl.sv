@@ -44,7 +44,6 @@ module Memory_Ctrl(
   // SDRAM
   output reg        sdram_cmd_valid,
   input             sdram_cmd_ready,
-  output reg        sdram_rd,           // not strobe -- keep up until ACK (TODO verify)
   output reg        sdram_wr,
   input             sdram_rdy,
   output reg        sdram_ack,
@@ -103,7 +102,6 @@ always @ (posedge clk_i) begin
     if (rst_i) begin
         mem_state <= STATE_IDLE;
         sdram_cmd_valid <= '0;
-        sdram_rd <= 0;
         sdram_wr <= 0;
         waitstate_counter <= 0;
     end else begin
@@ -260,7 +258,6 @@ always @ (posedge clk_i) begin
                     sdram_ack <= '1;
                 end else begin
                     // addr=1 -> 32-bit read finished
-                    sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
                     sdram_wr <= 0;
 
                     if (mem_purpose == PURPOSE_I) begin
@@ -323,14 +320,12 @@ always @ (posedge clk_i) begin
                         mem_state <= STATE_SDRAM_WAIT;
                     end else if (sdram_addr_x16[0] == 1) begin
                         // addr=1, sdram ready, wait done -> 32-bit write finished
-                        sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
                         sdram_wr <= 0;
                         mem_state <= STATE_FINISHED;
                     end
                 end else begin
                     // 16-bit write
 
-                    sdram_rd <= 0;      // probably not OK to de-assert simultaneously with ACK if asynchronous? what if ACK arrives 1 cycle earlier?
                     sdram_wr <= 0;
                     mem_state <= STATE_FINISHED;
 

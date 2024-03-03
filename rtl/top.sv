@@ -39,7 +39,6 @@ module top
     // Memory control-related
     wire        sdram_cmd_valid;
     wire        sdram_cmd_ready;
-    reg         sdram_rd;
     reg         sdram_wr;
     wire[23:0]  sdram_addr_x16;
     wire[15:0]  sdram_wdata;
@@ -56,7 +55,6 @@ module top
 
     wire        cpu_sdram_cmd_valid;
     wire        cpu_sdram_cmd_ready;
-    wire        cpu_sdram_rd;
     wire        cpu_sdram_wr;
     wire[23:0]  cpu_sdram_addr_x16;
     wire[15:0]  cpu_sdram_wdata;
@@ -264,7 +262,6 @@ module top
         .sys_clk(clk_sys),
         .cmd_valid_i(sdram_cmd_valid),
         .cmd_ready_o(sdram_cmd_ready),
-        .sys_rd(sdram_rd),
         .sys_wr(sdram_wr),
         .sys_ab(sdram_addr_x16),
         .sys_di(sdram_wdata),
@@ -293,7 +290,6 @@ module top
 
       .sdram_cmd_valid,
       .sdram_cmd_ready,
-      .sdram_rd,
       .sdram_wr,
       .sdram_addr_x16,
       .sdram_wdata,
@@ -307,7 +303,6 @@ module top
 
       .cpu_sdram_cmd_valid,
       .cpu_sdram_cmd_ready,
-      .cpu_sdram_rd,
       .cpu_sdram_wr,
       .cpu_sdram_addr_x16,
       .cpu_sdram_wdata,
@@ -394,7 +389,6 @@ module top
       .csr_stall_i(csr_stall),
       .csr_dat_i(csr_dat_o),
 
-      .sdram_rd(cpu_sdram_rd),
       .sdram_cmd_valid(cpu_sdram_cmd_valid),
       .sdram_cmd_ready(cpu_sdram_cmd_ready),
       .sdram_wr(cpu_sdram_wr),

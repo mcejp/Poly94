@@ -12,7 +12,6 @@ module sdram_pnru (
     input  wire        sys_clk,             // CLK 25 Mhz
     input              cmd_valid_i,         // command valid strobe
     output reg         cmd_ready_o,         // command acceptance strobe
-    input  wire        sys_rd,              // read word
     input  wire        sys_wr,              // write word
     output reg         sys_rdy = 1'b0,      // mem ready
     input  wire        sys_ack,             // mem cycle end
@@ -48,11 +47,10 @@ module sdram_pnru (
 
   reg [15:0] di;
   reg [23:0] ab;
-  reg rd, wr, ack;
+  reg wr, ack;
   always @ (*) begin
     di <= sys_di;
     ab <= sys_ab;
-    rd <= sys_rd;
     wr <= sys_wr;
     ack <= sys_ack;
   end
@@ -108,7 +106,7 @@ module sdram_pnru (
               else begin
                 sys_rdy <= 1'b0;
                 if (ctr>=RFTIME) state <= RFRSH1;         // as needed, refresh a row
-                else if (cmd_valid_i|rd|wr) begin
+                else if (cmd_valid_i|wr) begin
                   state <= RDWR;           // else respond to rd or wr request
                   sdr_dqm <= !wr ? 2'b00 : ~sys_wmask;
                   bursting <= burst_i;
