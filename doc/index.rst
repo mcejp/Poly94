@@ -7,6 +7,7 @@ Poly94 Game System
 
    bootloader
    build-environment
+   code-style
    critical-paths
    roadmap
    sdram-controller
