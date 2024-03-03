@@ -55,6 +55,7 @@ module Sdram_Arbiter(
   input             video_sdram_ack,
   input[23:0]       video_sdram_addr_x16,
   output reg        video_sdram_resp_valid,
+  output reg        video_sdram_resp_last,
   output reg[15:0]  video_sdram_rdata
 );
 
@@ -173,6 +174,7 @@ always @ (*) begin
 
   cpu_sdram_rdata = sdram_rdata;
   video_sdram_rdata = sdram_rdata;
+  video_sdram_resp_last = sdram_resp_last;
 end
 
 endmodule

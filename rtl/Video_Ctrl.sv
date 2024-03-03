@@ -24,6 +24,7 @@ module Video_Ctrl(
   sdram_ack,
   sdram_addr_x16,
   sdram_resp_valid,
+  sdram_resp_last,
   sdram_rdata,
 
   timing_i,
@@ -44,6 +45,7 @@ input             sdram_rdy;
 output reg        sdram_ack;
 output reg[23:0]  sdram_addr_x16;     // sdram address in 16-bit words (16Mw => 32MB)
 input             sdram_resp_valid;
+input             sdram_resp_last;
 input[15:0]       sdram_rdata;
 
 input VGA_Timing  timing_i;

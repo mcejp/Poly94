@@ -74,6 +74,7 @@ module top
     wire        video_sdram_ack;
     wire[23:0]  video_sdram_addr_x16;
     wire        video_sdram_resp_valid;
+    wire        video_sdram_resp_last;
     wire[15:0]  video_sdram_rdata;
 
     wire[BOOTROM_ADDR_BITS-1:2]  bootrom_addr;
@@ -165,6 +166,7 @@ module top
       .sdram_ack(video_sdram_ack),
       .sdram_addr_x16(video_sdram_addr_x16),
       .sdram_resp_valid(video_sdram_resp_valid),
+      .sdram_resp_last(video_sdram_resp_last),
       .sdram_rdata(video_sdram_rdata),
 
       .timing_i(timing0),
@@ -321,6 +323,7 @@ module top
       .video_sdram_ack,
       .video_sdram_addr_x16,
       .video_sdram_resp_valid,
+      .video_sdram_resp_last,
       .video_sdram_rdata
     );
 
