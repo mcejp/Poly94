@@ -1,5 +1,9 @@
 // Poly94 Video Control
-
+//
+// TABLE OF CONTENTS
+// - Address generation & memory interface
+// - Framebuffer scan-out
+// - RGB output generation
 //
 // indent: 2sp
 
@@ -54,8 +58,7 @@ wire[5:0] fb_page = 6'h20;            // frame buffer can be moved in 512k incre
                                       // CPU addr = 0x0400'0000 + fb_page * 0x8'0000
 
 reg[15:0] line_buffer[0:1023];
-reg[9:0] line_read_ptr;
-wire[15:0] line_read_data = line_buffer[line_read_ptr];
+reg[15:0] line_read_data;
 
 reg[9:0] line_write_ptr;
 
@@ -67,6 +70,8 @@ localparam DISPLAY_H = 240;
 localparam BURST_LEN = 64;
 localparam BURST_BITS = 6;
 
+// Address generation & memory interface
+
 always @ (posedge clk_i) begin
   sdram_ack <= 1'b0;
 
@@ -77,7 +82,6 @@ always @ (posedge clk_i) begin
   if (rst_i) begin
     sdram_addr_x16 <= 0;
 
-    line_read_ptr <= 10'd0;
     line_write_ptr <= 10'd0;
     line_no <= '0;
   end else begin
@@ -88,7 +92,6 @@ always @ (posedge clk_i) begin
     end
 
     if (timing_i.end_of_line && timing_i.vsync_n == 1'b1) begin   // FIXME: should start loading if *next* line is not blanked
-      line_read_ptr <= 10'd0;
       line_write_ptr <= 10'd0;
       line_no <= line_no + 1;
 
@@ -96,9 +99,6 @@ always @ (posedge clk_i) begin
         // if framebuffer enabled, begin sdram read
         sdram_cmd_valid <= '1;
       end
-    end else if (timing_i.valid && timing_i.blank_n == '1) begin
-      // visible pixel
-      line_read_ptr <= line_read_ptr + 1'b1;
     end
 
     if (sdram_ack) begin
@@ -132,11 +132,32 @@ always @ (posedge clk_i) begin
     end
   end
 
-  timing_o <= timing_i;
   sdram_addr_x16[23:18] <= fb_page;
 end
 
-// RGB Output Generation
+// Framebuffer scan-out
+
+reg[9:0] line_read_ptr;
+
+always_ff @ (posedge clk_i) begin
+  if (rst_i) begin
+    line_read_ptr <= 10'd0;
+  end else begin
+    if (timing_i.end_of_line) begin
+      line_read_ptr <= 10'd0;
+    end else if (timing_i.valid && timing_i.blank_n == '1) begin
+      // must not increment only during visible pixels, because the counter gets reset
+      // just after the last visible pixel in a line
+      line_read_ptr <= line_read_ptr + 1'b1;
+    end
+  end
+end
+
+always_comb begin
+  line_read_data = line_buffer[line_read_ptr];
+end
+
+// RGB output generation
 
 always_ff @ (posedge clk_i) begin
   if (rst_i) begin
@@ -155,6 +176,8 @@ always_ff @ (posedge clk_i) begin
       rgb_o <= 24'hFF00FF;
     end
   end
+
+  timing_o <= timing_i;
 end
 
 assign sdram_rd = '0;
