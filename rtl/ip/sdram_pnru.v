@@ -169,7 +169,11 @@ module sdram_pnru (
                 if (is_write) sdr_cmd <= BURST_STOP;
                 if (bursting) begin
                   // $display("SDRAM burst cnt %d, put out data, stop=%d", burst_count, (burst_count == 64 - CL));
-                  if (burst_count == 64 - CL) begin    // might be off by 1 or 2
+                  // when we receive byte burst_len-CL-1, we issue BURST_STOP in the next cycle (see dsh page 34)
+
+                  // for a burst length of 4 (example) and CL=2, BURST_STOP must be issued upon the 3rd word being read
+                  // so we must assign the register upon the 2nd word: burst_count == burst_len - CL - 1
+                  if (burst_count == 64 - CL - 1) begin    // might be off by 1 or 2
                     sdr_cmd <= BURST_STOP;
                   end
 
