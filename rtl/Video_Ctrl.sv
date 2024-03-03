@@ -80,6 +80,7 @@ always @ (posedge clk_i) begin
   end
 
   if (rst_i) begin
+    sdram_cmd_valid <= '0;
     sdram_addr_x16 <= 0;
 
     line_write_ptr <= 10'd0;
