@@ -30,6 +30,7 @@ module Sdram_Arbiter(
   output reg[23:0]  sdram_addr_x16,
   output reg[15:0]  sdram_wdata,
   input             sdram_resp_valid,
+  input             sdram_resp_last,
   input[15:0]       sdram_rdata,
   output reg        sdram_ack,
   input             sdram_rdy,

@@ -20,6 +20,7 @@ module sdram_pnru (
     input  wire [15:0] sys_di,              // data in
     output reg  [15:0] sys_do,              // data out
     output reg         resp_valid_o,        // read data valid
+    output reg         resp_last_o,         // read data last
     input  wire  [1:0] sys_wmask,           // byte mask
     input              burst_i,
 
@@ -166,6 +167,7 @@ module sdram_pnru (
                 sys_rdy <= 1'b1;
                 if (!is_write) sys_do  <= sdr_q;
                 if (!is_write) resp_valid_o <= '1;
+                resp_last_o <= (!bursting || burst_count == 63);
                 if (is_write) sdr_cmd <= BURST_STOP;
                 if (bursting) begin
                   // $display("SDRAM burst cnt %d, put out data, stop=%d", burst_count, (burst_count == 64 - CL));

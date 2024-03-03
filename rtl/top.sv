@@ -44,6 +44,7 @@ module top
     wire[23:0]  sdram_addr_x16;
     wire[15:0]  sdram_wdata;
     wire        sdram_resp_valid;
+    wire        sdram_resp_last;
     wire[15:0]  sdram_rdata;
     wire        sdram_ack;
     wire        sdram_rdy;
@@ -271,6 +272,7 @@ module top
         .sys_wmask(sdram_wmask),
         .burst_i(sdram_burst),
         .resp_valid_o(sdram_resp_valid),
+        .resp_last_o(sdram_resp_last),
 
         .sdr_ab(sdram_a),
         .sdr_d(sdr_d),
@@ -299,6 +301,7 @@ module top
       .sdram_wmask,
       .sdram_burst,
       .sdram_resp_valid,
+      .sdram_resp_last,
 
       .cpu_sdram_cmd_valid,
       .cpu_sdram_cmd_ready,
