@@ -9,8 +9,8 @@ typedef struct packed {
     logic hsync_n;
     logic vsync_n;
     logic blank_n;          // 1 if pixel visible, 0 if "blanked"
-    logic end_of_line;      // strobed just after the last visible pixel of a visible line
-    logic end_of_frame;     // strobed just after the last visible pixel of the last visible line (simultaneously with end_of_line_o)
+    logic end_of_visible_line;  // strobed just after the last visible pixel of a visible line
+    logic end_of_frame;     // strobed just after the last visible pixel of the last visible line (simultaneously with end_of_visible_line_o)
     logic valid;
 } VGA_Timing;
 

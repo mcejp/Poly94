@@ -151,9 +151,9 @@ end
 
 always @ (posedge clk_i) begin
     if (clk_en && is_picture_line && next_i == H_VISIBLE) begin
-        timing_o.end_of_line <= 1'b1;
+        timing_o.end_of_visible_line <= 1'b1;
     end else begin
-        timing_o.end_of_line <= 1'b0;
+        timing_o.end_of_visible_line <= 1'b0;
     end
 end
 

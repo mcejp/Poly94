@@ -4,13 +4,13 @@ module RGB_Color_Bars_Generator(
     clk_i,
 
     end_of_frame_i,
-    end_of_line_i,
+    end_of_visible_line_i,
     hsync_n_i,
     vsync_n_i,
     visible_i,
 
     end_of_frame_o,
-    end_of_line_o,
+    end_of_visible_line_o,
     hsync_n_o,
     vsync_n_o,
     visible_o,
@@ -22,9 +22,9 @@ localparam PIXELS_PER_VISIBLE_LINE = 640;
 localparam PIXELS_PER_STRIPE = PIXELS_PER_VISIBLE_LINE / 8;
 
 input clk_i;
-input end_of_frame_i, end_of_line_i, hsync_n_i, vsync_n_i, visible_i;
+input end_of_frame_i, end_of_visible_line_i, hsync_n_i, vsync_n_i, visible_i;
 
-output reg end_of_frame_o, end_of_line_o, hsync_n_o, vsync_n_o, visible_o;
+output reg end_of_frame_o, end_of_visible_line_o, hsync_n_o, vsync_n_o, visible_o;
 output reg[23:0] rgb_o;
 
 wire[23:0] RGB_table[0:7];
@@ -43,7 +43,7 @@ reg[2:0] index; // 0 to 7
 reg[$clog2(PIXELS_PER_STRIPE)-1:0] cnt;
 
 always @ (posedge clk_i) begin
-    if (end_of_line_i == 1'b1) begin
+    if (end_of_visible_line_i == 1'b1) begin
         index <= 0;
         cnt <= 0;
     end else if (visible_i) begin
@@ -58,7 +58,7 @@ always @ (posedge clk_i) begin
 
     visible_o <= visible_i;
     end_of_frame_o <= end_of_frame_i;
-    end_of_line_o <= end_of_line_i;
+    end_of_visible_line_o <= end_of_visible_line_i;
     hsync_n_o <= hsync_n_i;
     vsync_n_o <= vsync_n_i;
 

@@ -112,12 +112,12 @@ module top
     
     //     .visible_i(timing0.blank_n),
     //     .end_of_frame_i(timing0.end_of_frame),
-    //     .end_of_line_i(timing0.end_of_line),
+    //     .end_of_visible_line_i(timing0.end_of_visible_line),
     //     .hsync_n_i(timing0.hsync_n),
     //     .vsync_n_i(timing0.vsync_n),
 
     //     .end_of_frame_o(end_of_frame1),
-    //     .end_of_line_o(end_of_line1),
+    //     .end_of_visible_line_o(end_of_visible_line1),
     //     .hsync_n_o(hsync_n1),
     //     .vsync_n_o(vsync_n1),
     //     .visible_o(blank_n1),
@@ -129,7 +129,7 @@ module top
     //     .rst_i(1'b0),
 
     //     .end_of_frame_i(end_of_frame1),
-    //     .end_of_line_i(end_of_line1),
+    //     .end_of_visible_line_i(end_of_visible_line1),
     //     .hsync_n_i(hsync_n1),
     //     .vsync_n_i(vsync_n1),
     //     .visible_i(blank_n1),
@@ -139,7 +139,7 @@ module top
 
     //     .visible_o(blank_n2),
     //     .end_of_frame_o(end_of_frame2),
-    //     .end_of_line_o(end_of_line2),
+    //     .end_of_visible_line_o(end_of_visible_line2),
     //     .hsync_n_o(hsync_n2),
     //     .vsync_n_o(vsync_n2),
 
@@ -455,7 +455,7 @@ module top
 
     always_comb begin
         interrupts_to_set[INT_VSYNC] = (timing1.end_of_frame == 1);
-        interrupts_to_set[INT_HSYNC] = (timing1.end_of_line == 1);
+        interrupts_to_set[INT_HSYNC] = (timing1.end_of_visible_line == 1);
 
         interrupts_to_clear = SYS_IP_wr ? SYS_IP_cpu : '0;
     end

@@ -5,7 +5,7 @@ module Text_Generator(
     rst_i,
 
     end_of_frame_i,
-    end_of_line_i,
+    end_of_visible_line_i,
     hsync_n_i,
     vsync_n_i,
     visible_i,
@@ -14,7 +14,7 @@ module Text_Generator(
     fg_rgb_i,
 
     end_of_frame_o,
-    end_of_line_o,
+    end_of_visible_line_o,
     hsync_n_o,
     vsync_n_o,
     visible_o,
@@ -28,9 +28,9 @@ module Text_Generator(
 );
 
 input clk_i, rst_i;
-input end_of_frame_i, end_of_line_i, hsync_n_i, vsync_n_i, visible_i;
+input end_of_frame_i, end_of_visible_line_i, hsync_n_i, vsync_n_i, visible_i;
 input[23:0] bg_rgb_i, fg_rgb_i;
-output reg end_of_frame_o, end_of_line_o, hsync_n_o, vsync_n_o, visible_o;
+output reg end_of_frame_o, end_of_visible_line_o, hsync_n_o, vsync_n_o, visible_o;
 output reg[23:0] rgb_o;
 
 // 60x21 = 1260 = 11 bits
@@ -54,7 +54,7 @@ reg[$clog2(240)-1:0] y;
 
 reg[6:0] char_data;
 
-reg start_of_line;  // end_of_line_i delayed by 1 clock
+reg start_of_line;  // end_of_visible_line_i delayed by 1 clock
 
 always @ (posedge clk_i) begin
     if (rst_i) begin
@@ -71,7 +71,7 @@ always @ (posedge clk_i) begin
             y <= 0;
 
             // TODO: how do we trigger fetch of the first character?
-        end else if (end_of_line_i) begin
+        end else if (end_of_visible_line_i) begin
             if (yy < CHAR_H - 1) begin
                 yy <= yy + 1;
             end else begin
@@ -84,7 +84,7 @@ always @ (posedge clk_i) begin
 
         addr <= char_data * 11 + yy;
 
-        if (end_of_line_i) begin
+        if (end_of_visible_line_i) begin
             col <= 0;
             xx <= 0;
             x <= 0;
@@ -108,10 +108,10 @@ always @ (posedge clk_i) begin
         end
     end
 
-    start_of_line <= end_of_line_i;
+    start_of_line <= end_of_visible_line_i;
 
     end_of_frame_o <= end_of_frame_i;
-    end_of_line_o <= end_of_line_i;
+    end_of_visible_line_o <= end_of_visible_line_i;
     hsync_n_o <= hsync_n_i;
     vsync_n_o <= vsync_n_i;
     visible_o <= visible_i;

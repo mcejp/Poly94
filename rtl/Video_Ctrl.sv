@@ -85,13 +85,13 @@ always @ (posedge clk_i) begin
     line_write_ptr <= 10'd0;
     line_no <= '0;
   end else begin
-    if (timing_i.end_of_line) begin
+    if (timing_i.end_of_visible_line) begin
 `ifdef VERBOSE
       $display("Video: EOL; en=%d vsync_n=%d", fb_en_i, timing_i.vsync_n);
 `endif
     end
 
-    if (timing_i.end_of_line && timing_i.vsync_n == 1'b1) begin   // FIXME: should start loading if *next* line is not blanked
+    if (timing_i.end_of_visible_line && timing_i.vsync_n == 1'b1) begin   // FIXME: should start loading if *next* line is not blanked
       line_write_ptr <= 10'd0;
       line_no <= line_no + 1;
 
@@ -143,7 +143,7 @@ always_ff @ (posedge clk_i) begin
   if (rst_i) begin
     line_read_ptr <= 10'd0;
   end else begin
-    if (timing_i.end_of_line) begin
+    if (timing_i.end_of_visible_line) begin
       line_read_ptr <= 10'd0;
     end else if (timing_i.valid && timing_i.blank_n == '1) begin
       // must not increment only during visible pixels, because the counter gets reset
